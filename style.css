@@ -1,0 +1,11 @@
+ul {
+    list-style-type: none;
+}
+
+#main-profile-image {
+    width: 80%;
+}
+
+.platform-link-image {
+    width: 30px;
+}
