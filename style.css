@@ -2,10 +2,21 @@ ul {
     list-style-type: none;
 }
 
+a {
+    color: #767D82 !important;
+}
+
 #main-profile-image {
-    width: 80%;
+    width: 60%;
 }
 
 .platform-link-image {
-    width: 30px;
+    width: 80%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.platform-link-image:hover {
+    width: 85%;
 }
