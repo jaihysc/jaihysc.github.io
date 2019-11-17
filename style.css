@@ -1,3 +1,9 @@
+body {
+    background: #E0EAFC;  /* fallback for old browsers */
+    background: -webkit-linear-gradient(to right, #CFDEF3, #E0EAFC);  /* Chrome 10-25, Safari 5.1-6 */
+    background: linear-gradient(to right, #CFDEF3, #E0EAFC); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */    
+}
+
 ul {
     list-style-type: none;
 }
@@ -6,17 +12,29 @@ a {
     color: #767D82 !important;
 }
 
+.nav-link {
+    color: darkgray !important;
+}
+
 #main-profile-image {
-    width: 60%;
+    width: 50%;
+    margin: 0;
+    padding: 0;
 }
 
 .platform-link-image {
-    width: 80%;
+    margin-top: 10px;
+    width: 100px;
+
     display: block;
     margin-left: auto;
     margin-right: auto;
 }
 
 .platform-link-image:hover {
-    width: 85%;
+    width: 105px;
+}
+
+#platforms-row {
+    background: rgba(255, 255, 255, 0.4);
 }
