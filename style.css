@@ -1,7 +1,8 @@
 body {
-    background: #E0EAFC;  /* fallback for old browsers */
-    background: -webkit-linear-gradient(to right, #CFDEF3, #E0EAFC);  /* Chrome 10-25, Safari 5.1-6 */
-    background: linear-gradient(to right, #CFDEF3, #E0EAFC); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */    
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+    background-image: url('images/background.jpg');
 }
 
 ul {
@@ -16,15 +17,10 @@ a {
     color: darkgray !important;
 }
 
-#main-profile-image {
-    width: 50%;
-    margin: 0;
-    padding: 0;
-}
-
 .platform-link-image {
-    margin-top: 10px;
-    width: 100px;
+    margin-top: 60px;
+    width: 70px;
+    height: 70px;
 
     display: block;
     margin-left: auto;
@@ -32,9 +28,16 @@ a {
 }
 
 .platform-link-image:hover {
-    width: 105px;
+    width: 72px;
+    height: 72px;
 }
 
-#platforms-row {
-    background: rgba(255, 255, 255, 0.4);
+
+/* Bootstrap override */
+.jumbotron {
+    background: none !important;
+}
+
+.card-title {
+    color: rgb(27, 27, 27) !important;
 }
