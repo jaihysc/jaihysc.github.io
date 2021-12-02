@@ -1,66 +1,53 @@
 <!DOCTYPE html>
 <html lang="en-US">
-
 <head>
     <link href="style.css" rel="stylesheet">
-
     <title>Jactorio</title>
     <meta name="Description" content="Jactorio">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="shortcut icon" type="image/png" href="images/main-icon.jpg"/>
 </head>
-
 <body>
     <div class="container-fluid">
         <div class="text-center">
             <h1 class="display-1">Jactorio</h1>
         </div>
-        
-        <div class="text-center">
-            <p>My attempt at recreating <a href="https://factorio.com/">Factorio</a></p>
-        </div>
-
         <hr class="my-4">
-        
         <div class="row">
-            <div class="offset-md-2 col-md-8">
+            <div class="col-md-6">
+                <img class="img-fluid" src="https://i.imgur.com/GmSxygO.png" alt="Screenshot">
+            </div>
+            <div class="col-md-6">
+                <h1 class="lead">My attempt at recreating <a href="https://factorio.com/">Factorio</a>, developed over the span of 2 years</p>
                 <div class="row rounded">
-
-                    <div class="offset-md-3 col-md-3">
+                    <div class="col">
+                        <a href="https://github.com/jaihysc/Jactorio/releases">
+                            <p class="text-center">Download</p>
+                        </a>
+                    </div>
+                    <div class="col">
                         <a href="https://github.com/jaihysc/jactorio">
-                            <div>
-                                <div class="card-body">
-                                    <h1 class="card-title text-center">Github</h1>
-                                </div>
-                            </div>
+                            <p class="text-center">Github</p>
                         </a>
                     </div>
-
-                    <div class="col-md-3">
+                    <div class="col">
                         <a href="https://github.com/jaihysc/Jactorio/wiki/Devlog">
-                            <div>
-                                <div class="card-body">
-                                    <h1 class="card-title text-center">Weekly log</h1>
-                                </div>
-                            </div>
+                            <p class="text-center">Weekly log</p>
                         </a>
                     </div>
-
                 </div>
+                <p></p>
+                <p>Written in C++ 17, rendering using OpenGL, loads runtime data using Python, builds via CMake.</p>
+                <p>If you wish to try it out, you can find automated releases from Azure Pipelines at the downloads tab.
+                    If you do not trust the releases from me, you can build it yourself at the Github tab where you will find instructions.</p>
+                <p>You can open the menu by pressing <code>escape</code>, where you can find the full list of keybinds.
+                    Some items are not craftable but can spawned in from the debug menu by pressing backtick(<code>`</code>).
+                    The game will save to <code>save/</code>, settings to <code>settings.json</code>, log to <code>log.txt</code> in the directory of the executable.
+                </p>
+                <p>If you have any feedback you can leave an issue on Github, I will attempt to address them in my free time.</p>
             </div>
         </div>
-        
     </div>
 </body>
-
 <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" rel="stylesheet"
     integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js" crossorigin="anonymous"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
-    integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous">
-</script>
-<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
-    integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous">
-</script>
-
 </html>

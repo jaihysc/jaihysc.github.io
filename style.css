@@ -14,30 +14,19 @@ a {
 }
 
 .nav-link {
-    color: darkgray !important;
+    color: gray !important;
 }
 
 .platform-link-image {
-    margin-top: 60px;
-    width: 70px;
-    height: 70px;
+    width: 10px;
+    height: 10px;
 
     display: block;
     margin-left: auto;
     margin-right: auto;
 }
 
-.platform-link-image:hover {
-    width: 72px;
-    height: 72px;
-}
-
-
 /* Bootstrap override */
 .jumbotron {
     background: none !important;
-}
-
-.card-title {
-    color: rgb(27, 27, 27) !important;
 }
