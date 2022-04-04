@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <title>Vim LaTeX Equation Editor</title>
+    <meta name="Description" content="Edit LaTeX equations online in a vim style editor">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type="text/css" media="screen">
+        #editor {
+            position: fixed;
+            top: 0;
+            right: 60%;
+            bottom: 0;
+            left: 0;
+        }
+        #output {
+            width: 60%;
+            float: right
+        }
+    </style>
+</head>
+<body>
+    <p id="output"></p>
+    <div class='mathjax_ignore' id="editor">Type :w and press &lt;Enter&gt; to typeset equation
+Inline mode 1: $ \nabla\cdot\mathbf E = \frac{\rho}{\epsilon_0} $
+Inline mode 2: \( \nabla\cdot\mathbf B \)
+
+\[ \text{Display mode 1: }\int_{\partial\Omega}\omega=\int_\Omega d\omega \]
+$$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -\frac{\mathrm d}{\mathrm dt}\iint_\Sigma\mathbf B\cdot\mathrm d\mathbf S $$</div>
+
+    <script src="https://pagecdn.io/lib/ace/1.4.14/ace.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://pagecdn.io/lib/ace/1.4.14/theme-monokai.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://pagecdn.io/lib/ace/1.4.14/keybinding-vim.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://pagecdn.io/lib/ace/1.4.14/mode-tex.min.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [
+                    ['$', '$'],
+                    ['\\(', '\\)']
+                ],
+                displayMath: [
+                    ['$$', '$$'],
+                    ['\\[', '\\]']
+                ],
+            },
+            options: {
+                ignoreHtmlClass: 'mathjax_ignore'
+            }
+        };
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.setKeyboardHandler("ace/keyboard/vim");
+        editor.session.setMode("ace/mode/tex");
+
+        editor.setOption('behavioursEnabled', false); // Disable auto-completion
+        editor.setOption('showPrintMargin', false); // Disable white vertical line
+        editor.setOption('wrap', true);
+        // Typeset on :w
+        ace.config.loadModule("ace/keyboard/vim", function(m) {
+            var VimApi = require("ace/keyboard/vim").CodeMirror.Vim
+            VimApi.defineEx("write", "w", function(cm, input) {
+                document.getElementById('output').innerText = editor.getValue();
+                MathJax.typeset();
+            })
+        })
+        // Typeset initial text
+        document.getElementById('output').innerText = editor.getValue();
+    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    </body>
+</html>
