@@ -20,13 +20,7 @@
 </head>
 <body>
     <p id="output"></p>
-    <div class='mathjax_ignore' id="editor">Type :w and press &lt;Enter&gt; to typeset equation
-Inline mode 1: $ \nabla\cdot\mathbf E = \frac{\rho}{\epsilon_0} $
-Inline mode 2: \( \nabla\cdot\mathbf B \)
-
-\[ \text{Display mode 1: }\int_{\partial\Omega}\omega=\int_\Omega d\omega \]
-$$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -\frac{\mathrm d}{\mathrm dt}\iint_\Sigma\mathbf B\cdot\mathrm d\mathbf S $$</div>
-
+    <div class='mathjax_ignore' id="editor"></div>
     <script src="https://pagecdn.io/lib/ace/1.4.14/ace.min.js" type="text/javascript" charset="utf-8"></script>
     <script src="https://pagecdn.io/lib/ace/1.4.14/theme-monokai.min.js" type="text/javascript" charset="utf-8"></script>
     <script src="https://pagecdn.io/lib/ace/1.4.14/keybinding-vim.min.js" type="text/javascript" charset="utf-8"></script>
@@ -62,9 +56,26 @@ $$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -
                 document.getElementById('output').innerText = editor.getValue();
                 MathJax.typeset();
             })
+            VimApi.defineEx("help", "help", function(cm, input) {
+                var text =
+                'Type :w and press <Enter> to typeset\n\n' +
+                'Below is an example:\n' +
+                'Inline mode 1: $ \\nabla\\cdot\\mathbf E = \\frac{\\rho}{\\epsilon_0} $\n' +
+                'Inline mode 2: \\( \\nabla\\cdot\\mathbf B = 0 \\)\n\n' +
+                '\\[ \\text{Display mode 1: }\\int_{\\partial\\Omega}\\omega=\\int_\\Omega d\\omega \\]\n' +
+                '$$ \\text{Display mode 2: }\\oint_{\\partial\\Sigma}\\mathbf E\\cdot\\mathrm{d}\\ell' +
+                ' = -\\frac{\\mathrm d}{\\mathrm dt}\\iint_\\Sigma\\mathbf B\\cdot\\mathrm d\\mathbf S $$'
+                editor.setValue(text)
+                document.getElementById('output').innerText = text;
+                MathJax.typeset();
+            })
         })
         // Typeset initial text
         document.getElementById('output').innerText = editor.getValue();
+
+        editor.state.cm.openNotification(
+            '<span style=>Type :w and press &lt;Enter&gt; to typeset; Type :help and press &lt;Enter&gt for help</span>',
+            {bottom: true, duration: 9999999999})
     </script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
