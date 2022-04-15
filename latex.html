@@ -21,6 +21,24 @@
 <body>
     <p id="output"></p>
     <div class='mathjax_ignore' id="editor"></div>
+    <script id="help_text" type="text/plain">$$
+\begin{array}{r|l}
+\text{Command} & \text{Description} \\ \hline
+\text{:w} & \text{Typeset written text} \\
+\text{:q} & \text{Hide the editor, it can be shown again by presing any key} \\
+\text{:wq :x} & \text{Typeset and hide the editor}
+\end{array}
+$$
+
+For example: Type :w and press <Enter> to typeset
+
+Below is an example of the syntax:
+Inline mode 1: $ \nabla\cdot\mathbf E = \frac{\rho}{\epsilon_0} $
+Inline mode 2: \( \nabla\cdot\mathbf B = 0 \)
+
+\[ \text{Display mode 1: }\int_{\partial\Omega}\omega=\int_\Omega d\omega \]
+$$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -\frac{\mathrm d}{\mathrm dt}\iint_\Sigma\mathbf B\cdot\mathrm d\mathbf S $$
+    </script>
     <script src="https://pagecdn.io/lib/ace/1.4.14/ace.min.js" type="text/javascript" charset="utf-8"></script>
     <script src="https://pagecdn.io/lib/ace/1.4.14/theme-monokai.min.js" type="text/javascript" charset="utf-8"></script>
     <script src="https://pagecdn.io/lib/ace/1.4.14/keybinding-vim.min.js" type="text/javascript" charset="utf-8"></script>
@@ -49,29 +67,55 @@
         editor.setOption('behavioursEnabled', false); // Disable auto-completion
         editor.setOption('showPrintMargin', false); // Disable white vertical line
         editor.setOption('wrap', true);
-        // Typeset on :w
         ace.config.loadModule("ace/keyboard/vim", function(m) {
-            var VimApi = require("ace/keyboard/vim").CodeMirror.Vim
-            VimApi.defineEx("write", "w", function(cm, input) {
+            var editorHidden = false;
+            let doTypeset = function() {
                 document.getElementById('output').innerText = editor.getValue();
                 MathJax.typeset();
+            };
+            let doQuit = function() {
+                document.getElementById('editor').style.right = '100%';
+                document.getElementById('output').style.width = '100%';
+                editorHidden = true;
+            };
+            let doShow = function() {
+                document.getElementById('editor').style.right = '60%';
+                document.getElementById('output').style.width = '60%';
+                editorHidden = false;
+            };
+
+            var VimApi = require("ace/keyboard/vim").CodeMirror.Vim
+            // Typeset on :w
+            VimApi.defineEx("write", "w", function(cm, input) {
+                doTypeset();
             })
+            // Hide editor on :q
+            VimApi.defineEx("quit", "q", function(cm, input) {
+                doQuit();
+            })
+            // Typeset and hide editor on :x or :wq
+            VimApi.defineEx("x", "x", function(cm, input) {
+                doTypeset();
+                doQuit();
+            })
+            VimApi.defineEx("wq", "wq", function(cm, input) {
+                doTypeset();
+                doQuit();
+            })
+            // Show document again
+            document.onkeydown = function(e) {
+                if (editorHidden) {
+                    doShow();
+                }
+            }
+            // :help
             VimApi.defineEx("help", "help", function(cm, input) {
-                var text =
-                'Type :w and press <Enter> to typeset\n\n' +
-                'Below is an example:\n' +
-                'Inline mode 1: $ \\nabla\\cdot\\mathbf E = \\frac{\\rho}{\\epsilon_0} $\n' +
-                'Inline mode 2: \\( \\nabla\\cdot\\mathbf B = 0 \\)\n\n' +
-                '\\[ \\text{Display mode 1: }\\int_{\\partial\\Omega}\\omega=\\int_\\Omega d\\omega \\]\n' +
-                '$$ \\text{Display mode 2: }\\oint_{\\partial\\Sigma}\\mathbf E\\cdot\\mathrm{d}\\ell' +
-                ' = -\\frac{\\mathrm d}{\\mathrm dt}\\iint_\\Sigma\\mathbf B\\cdot\\mathrm d\\mathbf S $$'
+                var text = document.getElementById('help_text').innerText
                 editor.setValue(text)
                 document.getElementById('output').innerText = text;
                 MathJax.typeset();
             })
         })
-        // Typeset initial text
-        document.getElementById('output').innerText = editor.getValue();
 
         editor.state.cm.openNotification(
             '<span style=>Type :w and press &lt;Enter&gt; to typeset; Type :help and press &lt;Enter&gt for help</span>',
