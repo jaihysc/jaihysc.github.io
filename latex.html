@@ -21,17 +21,16 @@
 <body>
     <p id="output"></p>
     <div class='mathjax_ignore' id="editor"></div>
-    <script id="help_text" type="text/plain">$$
+    <script id="help_text" type="text/plain">Type :help and press <Enter> to return
+$$
 \begin{array}{r|l}
 \text{Command} & \text{Description} \\ \hline
 \text{:w} & \text{Typeset written text} \\
 \text{:q} & \text{Hide the editor, it can be shown again by presing any key} \\
-\text{:wq :x} & \text{Typeset and hide the editor}
+\text{:wq :x} & \text{Typeset and hide the editor} \\
+\text{:help} & \text{Shows this menu, type :help again to return}
 \end{array}
 $$
-
-For example: Type :w and press <Enter> to typeset
-
 Below is an example of the syntax:
 Inline mode 1: $ \nabla\cdot\mathbf E = \frac{\rho}{\epsilon_0} $
 Inline mode 2: \( \nabla\cdot\mathbf B = 0 \)
@@ -69,6 +68,7 @@ $$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -
         editor.setOption('wrap', true);
         ace.config.loadModule("ace/keyboard/vim", function(m) {
             var editorHidden = false;
+            var previousText = null // Text in the editor prior to entering help
             let doTypeset = function() {
                 document.getElementById('output').innerText = editor.getValue();
                 MathJax.typeset();
@@ -110,10 +110,18 @@ $$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -
             }
             // :help
             VimApi.defineEx("help", "help", function(cm, input) {
-                var text = document.getElementById('help_text').innerText
-                editor.setValue(text)
-                document.getElementById('output').innerText = text;
-                MathJax.typeset();
+                if (previousText === null) {
+                    // Enter help mode
+                    previousText = editor.getValue()
+                    editor.setValue(document.getElementById('help_text').innerText)
+                    doTypeset()
+                }
+                else {
+                    // Exit help mode
+                    editor.setValue(previousText)
+                    previousText = null
+                    doTypeset()
+                }
             })
         })
 
