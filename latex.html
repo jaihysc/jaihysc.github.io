@@ -26,6 +26,7 @@
 $$
 \begin{array}{r|l}
 \text{Command} & \text{Description} \\ \hline
+\text{:set w=<number>} & \text{Set width of output window} \\
 \text{:w} & \text{Typeset written text} \\
 \text{:q} & \text{Hide the editor, it can be shown again by presing any key} \\
 \text{:wq :x} & \text{Typeset and hide the editor} \\
@@ -86,6 +87,23 @@ $$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -
             };
 
             var VimApi = require("ace/keyboard/vim").CodeMirror.Vim
+            // Change width of output window
+            VimApi.defineOption("width", 60, "number", ["w"], function(width, cm) {
+                let width_num = parseInt(width);
+                if (isNaN(width_num)) {
+                    editor.state.cm.openNotification("Invalid output width", {bottom: true, duration: 3000})
+                    return;
+                }
+                // Use quit to handle widths greater than 100, otherwise the editor canot be opened again
+                if (width_num >= 100) {
+                    doQuit();
+                }
+                else {
+                    document.getElementById('editor').style.right = width + "%";
+                    document.getElementById('output').style.width = width + "%";
+                }
+            })
+
             // Typeset on :w
             VimApi.defineEx("write", "w", function(cm, input) {
                 doTypeset();
