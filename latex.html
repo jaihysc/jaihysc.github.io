@@ -71,18 +71,23 @@ $$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -
         ace.config.loadModule("ace/keyboard/vim", function(m) {
             var editorHidden = false;
             var previousText = null // Text in the editor prior to entering help
+
+            // Changes output window width to given width as a percentage, e.g., 50 makes width 50% of screen
+            let changeOutputWidth = function(width) {
+                document.getElementById('editor').style.right = width + "%";
+                document.getElementById('output').style.width = width + "%";
+                editor.resize();
+            }
             let doTypeset = function() {
                 document.getElementById('output').innerText = editor.getValue();
                 MathJax.typeset();
             };
             let doQuit = function() {
-                document.getElementById('editor').style.right = '100%';
-                document.getElementById('output').style.width = '100%';
+                changeOutputWidth(100);
                 editorHidden = true;
             };
             let doShow = function() {
-                document.getElementById('editor').style.right = '60%';
-                document.getElementById('output').style.width = '60%';
+                changeOutputWidth(60);
                 editorHidden = false;
             };
 
@@ -99,8 +104,7 @@ $$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -
                     doQuit();
                 }
                 else {
-                    document.getElementById('editor').style.right = width + "%";
-                    document.getElementById('output').style.width = width + "%";
+                    changeOutputWidth(width);
                 }
             })
 
