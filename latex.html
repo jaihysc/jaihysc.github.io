@@ -28,7 +28,7 @@ $$
 \text{Command} & \text{Description} \\ \hline
 \text{:set w=<number>} & \text{Set width of output window} \\
 \text{:w} & \text{Typeset written text} \\
-\text{:q} & \text{Hide the editor, it can be shown again by presing any key} \\
+\text{:q} & \text{Hide the editor, it can be shown again by presing 'q'} \\
 \text{:wq :x} & \text{Typeset and hide the editor} \\
 \text{:help} & \text{Shows this menu, type :help again to return}
 \end{array}
@@ -71,6 +71,7 @@ $$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -
         ace.config.loadModule("ace/keyboard/vim", function(m) {
             var editorHidden = false;
             var previousText = null // Text in the editor prior to entering help
+            var previousWidth = 60; // Used to restore old width upon reopening editor
 
             // Changes output window width to given width as a percentage, e.g., 50 makes width 50% of screen
             let changeOutputWidth = function(width) {
@@ -87,7 +88,7 @@ $$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -
                 editorHidden = true;
             };
             let doShow = function() {
-                changeOutputWidth(60);
+                changeOutputWidth(previousWidth);
                 editorHidden = false;
             };
 
@@ -105,6 +106,7 @@ $$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -
                 }
                 else {
                     changeOutputWidth(width);
+                    previousWidth = width;
                 }
             })
 
@@ -127,8 +129,11 @@ $$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -
             })
             // Show document again
             document.onkeydown = function(e) {
-                if (editorHidden) {
-                    doShow();
+                // Press q to bring back editor again
+                if (!e.ctrlKey && !e.shiftKey && e.key === 'q') {
+                    if (editorHidden) {
+                        doShow();
+                    }
                 }
             }
             // :help
