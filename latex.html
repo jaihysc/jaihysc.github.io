@@ -17,10 +17,17 @@
             float: right;
             font-family: Helvetica, Arial, sans-serif;
         }
+        #output_container {
+            padding-left: 10em;
+            padding-right: 10em;
+        }
     </style>
 </head>
 <body>
-    <p id="output"></p>
+    <!--vvv Add output styling to div below vvv-->
+    <div id="output_container" style="/* Add output styling here */">
+        <p id="output"></p>
+    </div>
     <div class='mathjax_ignore' id="editor"></div>
     <script id="help_text" type="text/plain">Type :help and press <Enter> to return
 $$
@@ -39,6 +46,7 @@ Inline mode 2: \( \nabla\cdot\mathbf B = 0 \)
 
 \[ \text{Display mode 1: }\int_{\partial\Omega}\omega=\int_\Omega d\omega \]
 $$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -\frac{\mathrm d}{\mathrm dt}\iint_\Sigma\mathbf B\cdot\mathrm d\mathbf S $$
+The output can be styled in inspect element, to the div marked by the comment "Add output styling here".
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.7.1/ace.min.js" type="text/javascript" charset="utf-8"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.7.1/theme-monokai.min.js" type="text/javascript" charset="utf-8"></script>
