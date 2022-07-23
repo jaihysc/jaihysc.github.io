@@ -13,11 +13,14 @@
             left: 0;
         }
         #output {
-            width: 60%;
-            float: right;
             font-family: Helvetica, Arial, sans-serif;
         }
         #output_container {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 40%;
             padding-left: 10em;
             padding-right: 10em;
         }
@@ -84,7 +87,7 @@ The output can be styled in inspect element, to the div marked by the comment "A
             // Changes output window width to given width as a percentage, e.g., 50 makes width 50% of screen
             let changeOutputWidth = function(width) {
                 document.getElementById('editor').style.right = width + "%";
-                document.getElementById('output').style.width = width + "%";
+                document.getElementById('output_container').style.left = (100 - width) + "%";
                 editor.resize();
             }
             let doTypeset = function() {
