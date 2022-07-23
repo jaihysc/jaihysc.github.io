@@ -40,6 +40,7 @@ $$
 \text{:w} & \text{Typeset written text} \\
 \text{:q} & \text{Hide the editor, it can be shown again by presing 'q'} \\
 \text{:wq :x} & \text{Typeset and hide the editor} \\
+\text{:share} & \text{Generates link to share typeset text} \\
 \text{:help} & \text{Shows this menu, type :help again to return}
 \end{array}
 $$
@@ -79,6 +80,39 @@ The output can be styled in inspect element, to the div marked by the comment "A
         editor.setOption('behavioursEnabled', false); // Disable auto-completion
         editor.setOption('showPrintMargin', false); // Disable white vertical line
         editor.setOption('wrap', true);
+
+        // Sets message in the vim status bar
+        let notify = function(msg) {
+            editor.state.cm.openNotification(
+                '<span id="__notify_span"></span>',
+                {bottom: true, duration: 9999999999}
+            );
+            let span = document.getElementById("__notify_span");
+            span.innerText = msg;
+        }
+
+        // Encodes given string to base64
+        let encodeStr = function(str) {
+            // String -> bytes -> compressed bytes -> compressed string -> base64
+            let bytes = new TextEncoder().encode(str);
+            let compressedBytes = pako.deflate(bytes, {level: pako.constants.Z_BEST_COMPRESSION});
+            let compressedStr = String.fromCharCode.apply(null, compressedBytes);
+            return btoa(compressedStr);
+        };
+        // Decodes given base64 to string
+        let decodeStr = function(base64) {
+            let compressedStr = atob(base64);
+            let len = compressedStr.length;
+            let compressedBytes = new Uint8Array(len);
+            for (var i = 0; i < len; ++i) {
+                compressedBytes[i] = compressedStr.charCodeAt(i);
+            }
+            let bytes = pako.inflate(compressedBytes);
+            return new TextDecoder().decode(bytes);
+        };
+
+        // Allow doType to be used outside of loadModule
+        let doTypeset = null;
         ace.config.loadModule("ace/keyboard/vim", function(m) {
             var editorHidden = false;
             var previousText = null // Text in the editor prior to entering help
@@ -90,7 +124,7 @@ The output can be styled in inspect element, to the div marked by the comment "A
                 document.getElementById('output_container').style.left = (100 - width) + "%";
                 editor.resize();
             }
-            let doTypeset = function() {
+            doTypeset = function() {
                 document.getElementById('output').innerText = editor.getValue();
                 MathJax.typeset();
             };
@@ -162,13 +196,35 @@ The output can be styled in inspect element, to the div marked by the comment "A
                     doTypeset()
                 }
             })
+            // :share To get link to share text
+            VimApi.defineEx("share", "share", function(cm, input) {
+                let base64 = encodeStr(editor.getValue());
+
+                let url = new URL(document.URL);
+                url.searchParams.set("text", base64);
+                alert(url.href);
+            })
         })
 
-        editor.state.cm.openNotification(
-            '<span style=>Type :w and press &lt;Enter&gt; to typeset; Type :help and press &lt;Enter&gt for help</span>',
-            {bottom: true, duration: 9999999999})
+        window.addEventListener("load", function() {
+            notify("Type :w and press <Enter> to typeset; Type :help and press <Enter> for help");
+
+            // Load text from URL arg: "text"
+            // May fail if provided base64 is bad
+            try {
+                let url = new URL(document.URL);
+                let base64 = url.searchParams.get("text");
+                if (base64 != null) {
+                    editor.setValue(decodeStr(base64));
+                    doTypeset();
+                }
+            } catch (err) {
+                notify("Failed to load text: " + err);
+            }
+        });
     </script>
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script async src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js" integrity="sha512-EAKzSKex+PXC0U9OG13r1059ysjrjkJEpZoONCnZa0mBROY28iBOOxZSErUVw1LzLr2+U5PhR7zPCPKidUVJqg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     </body>
 </html>
