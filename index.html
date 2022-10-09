@@ -31,9 +31,8 @@
                     </a>
                 </div>
                 <p>Recreation of the game <a href="https://factorio.com/">Factorio</a>.</p>
-                <p>Written in: C++17, Python (loading runtime data), OpenGL.</p>
-                <p>Built via: CMake, Azure Pipelines.</p>
-                <p>Optimized renderer: cache locality, threading, assessing generated assembly.</p>
+                <p>It uses OpenGL for rendering and loads runtime data using Python. It is written in C++17, built via CMake, with automated builds running on Microsoft Azure.</p>
+                <p>I spent a significant amount of time optimizing the renderer, making use of threading to reduce frame times. When that was insufficient, I tuned the assembly in hot paths by assessing the compiler generated assembly and restructured code to convince the compiler to emit better assembly and redesigned data structures to take advantage of cache locality.</p>
             </div>
         </div>
         <hr>
@@ -49,7 +48,7 @@
                 </div>
                 <p>A C99 compiler I wrote, in C.</p>
                 <p>It currently supports all the basic language constructs: conditionals, loops, expressions, arrays, pointers, function calls, and so on.</p>
-                <p>It uses top-down recursive descent with backtracking to build nodes of language productions. The nodes are translated to a custom intermediate language, which is then converted into assembly via macro expansion and register allocation with graph coloring.</p>
+                <p>It uses top-down recursive descent with backtracking to build nodes of language productions. The nodes are translated to a custom intermediate language, which are then converted into assembly via macro expansion and register allocation with graph coloring.</p>
             </div>
         </div>
         <hr>
