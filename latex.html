@@ -139,6 +139,12 @@ The output can be styled in inspect element, to the div marked by the comment "A
             };
 
             var VimApi = require("ace/keyboard/vim").CodeMirror.Vim
+            // Remap some keys
+            VimApi.map("j", "gj", "normal")
+            VimApi.map("k", "gk", "normal")
+            VimApi.map("$", "g$", "normal")
+            VimApi.map("0", "g^", "normal")
+
             // Change width of output window
             VimApi.defineOption("width", 60, "number", ["w"], function(width, cm) {
                 let width_num = parseInt(width);
