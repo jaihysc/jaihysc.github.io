@@ -126,7 +126,17 @@ The output can be styled in inspect element, to the div marked by the comment "A
                 editor.resize();
             }
             doTypeset = function() {
-                document.getElementById('output').innerText = editor.getValue();
+                let text = editor.getValue();
+
+                // Strip the newline after display math endings since it comes with one
+                for (const delimiter of MathJax.config.tex.displayMath) {
+                    // First escape the search string for use as regex, then build the regex
+                    let regex = RegExp(delimiter[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\n', 'g');
+                    // replacement string has special behavior for certain symbols, use function instead
+                    text = text.replace(regex, function() {return delimiter[1]});
+                }
+
+                document.getElementById('output').innerText = text;
                 MathJax.typeset();
             };
             let doQuit = function() {
