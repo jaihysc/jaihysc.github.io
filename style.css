@@ -6,6 +6,16 @@
     margin-left: auto;
     margin-right: auto;
 }
+@media (max-width:768px){
+    .responsive-btn{
+        display:block
+    }
+    .responsive-btn-container-3{
+        display:grid;
+        grid-template-columns:repeat(3,1fr)
+    }
+}
+
 :root{
     --blue:#007bff;
     --indigo:#6610f2;
