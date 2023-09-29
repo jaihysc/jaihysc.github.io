@@ -28,70 +28,101 @@
                 </div>
             </div>
         </div>
-        <hr class="my-4">
-        <div class="row">
-            <div class="col-md-6">
-                <img class="img-fluid" src="images/jactorio.png" alt="Screenshot">
-            </div>
-            <div class="col-md-6">
-                <div class="mt-2 mb-4">
-                    <a class="p-2 bg-primary text-white responsive-btn" href="jactorio.html">
-                        <div class="d-inline">Jactorio (my game shown)</div>
-                    </a>
+        <!--Navbar-->
+        <ul class="nav nav-tabs justify-content-center" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="software-tab" data-bs-toggle="tab" data-bs-target="#software" type="button" role="tab" aria-controls="software" aria-selected="true">Software</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="hardware-tab" data-bs-toggle="tab" data-bs-target="#hardware" type="button" role="tab" aria-controls="hardware" aria-selected="false">Hardware</button>
+        </li>
+        </ul>
+        <div class="tab-content mt-3">
+            <!--Software-->
+            <div class="tab-pane fade show active" id="software" role="tabpanel" aria-labelledby="software-tab">
+                <div class="row">
+                    <div class="col-md-6">
+                        <img class="img-fluid" src="images/jactorio.png" alt="Screenshot">
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mt-2 mb-4">
+                            <a class="p-2 bg-primary text-white responsive-btn" href="jactorio.html">
+                                <div class="d-inline">Jactorio (my game shown)</div>
+                            </a>
+                        </div>
+                        <p>Recreation of the game <a href="https://factorio.com/">Factorio</a>.</p>
+                        <p>It uses OpenGL for rendering and loads runtime data using Python. It is written in C++17, built via CMake, with automated builds running on Microsoft Azure.</p>
+                        <p>I spent a significant amount of time optimizing the renderer, making use of threading to reduce frame times. When that was insufficient, I tuned the assembly in hot paths by assessing the compiler generated assembly and restructured code to convince the compiler to emit better assembly and redesigned data structures to take advantage of cache locality.</p>
+                    </div>
                 </div>
-                <p>Recreation of the game <a href="https://factorio.com/">Factorio</a>.</p>
-                <p>It uses OpenGL for rendering and loads runtime data using Python. It is written in C++17, built via CMake, with automated builds running on Microsoft Azure.</p>
-                <p>I spent a significant amount of time optimizing the renderer, making use of threading to reduce frame times. When that was insufficient, I tuned the assembly in hot paths by assessing the compiler generated assembly and restructured code to convince the compiler to emit better assembly and redesigned data structures to take advantage of cache locality.</p>
-            </div>
-        </div>
-        <hr>
-        <div class="row">
-            <div class="col-md-6">
-                <img class="img-fluid" src="images/cc.png" alt="C Compiler">
-            </div>
-            <div class="col-md-6">
-                <div class="mt-2 mb-4">
-                    <a class="p-2 bg-primary text-white responsive-btn" href="https://github.com/jaihysc/cc">
-                        <div class="d-inline">C Compiler</div>
-                    </a>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <img class="img-fluid" src="images/cc.png" alt="C Compiler">
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mt-2 mb-4">
+                            <a class="p-2 bg-primary text-white responsive-btn" href="https://github.com/jaihysc/cc">
+                                <div class="d-inline">C Compiler</div>
+                            </a>
+                        </div>
+                        <p>A C99 compiler I wrote, in C.</p>
+                        <p>It currently supports all the basic language constructs: conditionals, loops, expressions, arrays, pointers, function calls, and so on.</p>
+                        <p>It uses top-down recursive descent with backtracking to build nodes of language productions. The nodes are translated to a custom intermediate language, which are then converted into assembly via macro expansion and register allocation with graph coloring.</p>
+                    </div>
                 </div>
-                <p>A C99 compiler I wrote, in C.</p>
-                <p>It currently supports all the basic language constructs: conditionals, loops, expressions, arrays, pointers, function calls, and so on.</p>
-                <p>It uses top-down recursive descent with backtracking to build nodes of language productions. The nodes are translated to a custom intermediate language, which are then converted into assembly via macro expansion and register allocation with graph coloring.</p>
-            </div>
-        </div>
-        <hr>
-        <div class="row">
-            <div class="col-md-6">
-                <video class="img-fluid" src="https://i.imgur.com/ha4xlv3.mp4" alt="Aircraft takeoff" onclick="this.paused ? this.play() : this.pause();">
-            </div>
-            <div class="col-md-6">
-                <div class="mt-2 mb-4">
-                    <a class="p-2 bg-primary text-white responsive-btn" href="https://mods.factorio.com/mod/AircraftRealism">
-                        <div class="d-inline">Aircraft Realism (Game Extension)</div>
-                    </a>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <video class="img-fluid" src="https://i.imgur.com/ha4xlv3.mp4" alt="Aircraft takeoff" onclick="this.paused ? this.play() : this.pause();">
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mt-2 mb-4">
+                            <a class="p-2 bg-primary text-white responsive-btn" href="https://mods.factorio.com/mod/AircraftRealism">
+                                <div class="d-inline">Aircraft Realism (Game Extension)</div>
+                            </a>
+                        </div>
+                        <p>Framework to add aircraft to the game <a href="https://factorio.com/">Factorio</a>, the API is documented <a href="https://github.com/jaihysc/Factorio-AircraftRealism/blob/master/Docs/AddingNewPlanes.md">here</a>.</p>
+                        <p>The result is a product of the collaborative contributions from various individuals on GitHub and Factorio Forums - making suggestions, bug reports, and contributing code.</p>
+                        <p>It exploits existing features of the game to give the illusion of taking off and landing. Imitating takeoff using two cars with different collisions, one for the grounded plane, another for the airborne plane. Information about planes is serialized in Lua and stored across dummy entities which are created only for holding the serialized data</p>
+                    </div>
                 </div>
-                <p>Framework to add aircraft to the game <a href="https://factorio.com/">Factorio</a>, the API is documented <a href="https://github.com/jaihysc/Factorio-AircraftRealism/blob/master/Docs/AddingNewPlanes.md">here</a>.</p>
-                <p>The result is a product of the collaborative contributions from various individuals on GitHub and Factorio Forums - making suggestions, bug reports, and contributing code.</p>
-                <p>It exploits existing features of the game to give the illusion of taking off and landing. Imitating takeoff using two cars with different collisions, one for the grounded plane, another for the airborne plane. Information about planes is serialized in Lua and stored across dummy entities which are created only for holding the serialized data</p>
-            </div>
-        </div>
-        <hr>
-        <div class="row">
-            <div class="col-md-6">
-                <img class="img-fluid" src="images/vim-latex.png" alt="Vim LaTeX Equation Editor">
-            </div>
-            <div class="col-md-6">
-                <div class="mt-2 mb-4">
-                    <a class="p-2 bg-primary text-white responsive-btn" href="latex.html">
-                        <div class="d-inline">Vim LaTeX Equation Editor</div>
-                    </a>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <img class="img-fluid" src="images/vim-latex.png" alt="Vim LaTeX Equation Editor">
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mt-2 mb-4">
+                            <a class="p-2 bg-primary text-white responsive-btn" href="latex.html">
+                                <div class="d-inline">Vim LaTeX Equation Editor</div>
+                            </a>
+                        </div>
+                        <p>Edit LaTeX equations in a vim style editor.</p>
+                        <p>I find a vim style editor much faster to use for writing equations.
+                            As none of the existing websites supported a vim style editor, I made my own.</p>
+                    </div>
                 </div>
-                <p>Edit LaTeX equations in a vim style editor.</p>
-                <p>I find a vim style editor much faster to use for writing equations.
-                    As none of the existing websites supported a vim style editor, I made my own.</p>
+            </div>
+            <!--Hardware-->
+            <div class="tab-pane fade" id="hardware" role="tabpanel" aria-labelledby="hardware-tab">
+                <div class="row">
+                    <div class="col-md-6">
+                        <img class="img-fluid" src="images/hv-generator.png" alt="Screenshot">
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mt-2 mb-4">
+                            <a class="p-2 bg-primary text-white responsive-btn" href="hv-generator.html">
+                                <div class="d-inline">High voltage generator</div>
+                            </a>
+                        </div>
+                        <p>Generates continuous 30 kV arc from 3 V source.</p>
+                        <p>Custom designed circuit in LTSpice, prototyped with solder and breadboards, PCB designed in KiCAD, fabricated by JLCPCB.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
 </html>
