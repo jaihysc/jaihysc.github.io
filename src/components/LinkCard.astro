@@ -1,0 +1,38 @@
+---
+interface Props {
+	title: string;
+	href: string;
+}
+
+const { href, title } = Astro.props;
+---
+
+<!-- The boxes containing links to click on -->
+<li class="link-card">
+	<a href={href}>
+		<h2>
+			{title}
+			<span>&rarr;</span>
+		</h2>
+	</a>
+</li>
+
+<style>
+	.link-card {
+		display: flex;
+		background-color: whitesmoke;
+		border: 1px solid #23262d;
+	}
+	.link-card:is(:hover, :focus-within) {
+		background-color: #ddd; */
+	}
+	.link-card a {
+		width: 100%;
+		padding: 0.1rem 1.5rem;
+		color: black;
+		opacity: 0.8;
+	}
+	h2 {
+		font-size: 1.25rem;
+	}
+</style>

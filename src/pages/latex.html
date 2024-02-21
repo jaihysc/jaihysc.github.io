@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <title>Vim LaTeX Equation Editor</title>
+    <meta name="Description" content="Edit LaTeX equations online in a vim style editor">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style type="text/css" media="screen">
+        #editor {
+            position: fixed;
+            top: 0;
+            right: 60%;
+            bottom: 0;
+            left: 0;
+        }
+        #output {
+            font-family: Helvetica, Arial, sans-serif;
+        }
+        #output_container {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 40%;
+            padding-left: 10em;
+            padding-right: 10em;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <!--vvv Add output styling to div below vvv-->
+    <div id="output_container" style="/* Add output styling here */">
+        <p id="output"></p>
+    </div>
+    <div class='mathjax_ignore' id="editor"></div>
+    <script id="help_text" type="text/plain">Type :help and press <Enter> to return
+$$
+\begin{array}{r|l}
+\text{Command} & \text{Description} \\ \hline
+\text{:set w=<number>} & \text{Set width of output window} \\
+\text{:w} & \text{Typeset written text} \\
+\text{:q} & \text{Hide the editor, it can be shown again by presing 'q'} \\
+\text{:wq :x} & \text{Typeset and hide the editor} \\
+\text{:share} & \text{Generates link to share typeset text} \\
+\text{:help} & \text{Shows this menu, type :help again to return}
+\end{array}
+$$
+Below is an example of the syntax:
+Inline mode 1: $ \nabla\cdot\mathbf E = \frac{\rho}{\epsilon_0} $
+Inline mode 2: \( \nabla\cdot\mathbf B = 0 \)
+
+\[ \text{Display mode 1: }\int_{\partial\Omega}\omega=\int_\Omega d\omega \]
+$$ \text{Display mode 2: }\oint_{\partial\Sigma}\mathbf E\cdot\mathrm{d}\ell = -\frac{\mathrm d}{\mathrm dt}\iint_\Sigma\mathbf B\cdot\mathrm d\mathbf S $$
+The output can be styled in inspect element, to the div marked by the comment "Add output styling here".
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.7.1/ace.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.7.1/theme-monokai.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.7.1/keybinding-vim.min.js" type="text/javascript" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.7.1/mode-tex.min.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [
+                    ['$', '$'],
+                    ['\\(', '\\)']
+                ],
+                displayMath: [
+                    ['$$', '$$'],
+                    ['\\[', '\\]']
+                ],
+            },
+            options: {
+                ignoreHtmlClass: 'mathjax_ignore'
+            }
+        };
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.setKeyboardHandler("ace/keyboard/vim");
+        editor.session.setMode("ace/mode/tex");
+
+        editor.setOption('behavioursEnabled', false); // Disable auto-completion
+        editor.setOption('showPrintMargin', false); // Disable white vertical line
+        editor.setOption('wrap', true);
+
+        // Sets message in the vim status bar
+        let notify = function(msg) {
+            editor.state.cm.openNotification(
+                '<span id="__notify_span"></span>',
+                {bottom: true, duration: 9999999999}
+            );
+            let span = document.getElementById("__notify_span");
+            span.innerText = msg;
+        }
+
+        // Encodes given string to base64
+        let encodeStr = function(str) {
+            // String -> bytes -> compressed bytes -> compressed string -> base64
+            let bytes = new TextEncoder().encode(str);
+            let compressedBytes = pako.deflate(bytes, {level: pako.constants.Z_BEST_COMPRESSION});
+            let compressedStr = String.fromCharCode.apply(null, compressedBytes);
+            return btoa(compressedStr);
+        };
+        // Decodes given base64 to string
+        let decodeStr = function(base64) {
+            let compressedStr = atob(base64);
+            let len = compressedStr.length;
+            let compressedBytes = new Uint8Array(len);
+            for (var i = 0; i < len; ++i) {
+                compressedBytes[i] = compressedStr.charCodeAt(i);
+            }
+            let bytes = pako.inflate(compressedBytes);
+            return new TextDecoder().decode(bytes);
+        };
+
+        // Allow doType to be used outside of loadModule
+        let doTypeset = null;
+        ace.config.loadModule("ace/keyboard/vim", function(m) {
+            var editorHidden = false;
+            var previousText = null // Text in the editor prior to entering help
+            var previousWidth = 60; // Used to restore old width upon reopening editor
+
+            // Changes output window width to given width as a percentage, e.g., 50 makes width 50% of screen
+            let changeOutputWidth = function(width) {
+                document.getElementById('editor').style.right = width + "%";
+                document.getElementById('output_container').style.left = (100 - width) + "%";
+                editor.resize();
+            }
+            doTypeset = function() {
+                let text = editor.getValue();
+
+                // Strip the newline after display math endings since it comes with one
+                for (const delimiter of MathJax.config.tex.displayMath) {
+                    // First escape the search string for use as regex, then build the regex
+                    let regex = RegExp(delimiter[1].replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*\\n', 'g');
+                    // replacement string has special behavior for certain symbols, use function instead
+                    text = text.replace(regex, function() {return delimiter[1]});
+                }
+
+                document.getElementById('output').innerText = text;
+                MathJax.typeset();
+            };
+            let doQuit = function() {
+                changeOutputWidth(100);
+                editorHidden = true;
+            };
+            let doShow = function() {
+                changeOutputWidth(previousWidth);
+                editorHidden = false;
+            };
+
+            var VimApi = require("ace/keyboard/vim").CodeMirror.Vim
+            // Remap some keys
+            VimApi.map("j", "gj", "normal")
+            VimApi.map("k", "gk", "normal")
+            VimApi.map("$", "g$", "normal")
+            VimApi.map("0", "g^", "normal")
+
+            // Change width of output window
+            VimApi.defineOption("width", 60, "number", ["w"], function(width, cm) {
+                let width_num = parseInt(width);
+                if (isNaN(width_num)) {
+                    editor.state.cm.openNotification("Invalid output width", {bottom: true, duration: 3000})
+                    return;
+                }
+                // Use quit to handle widths greater than 100, otherwise the editor canot be opened again
+                if (width_num >= 100) {
+                    doQuit();
+                }
+                else {
+                    changeOutputWidth(width);
+                    previousWidth = width;
+                }
+            })
+
+            // Typeset on :w
+            VimApi.defineEx("write", "w", function(cm, input) {
+                doTypeset();
+            })
+            // Hide editor on :q
+            VimApi.defineEx("quit", "q", function(cm, input) {
+                doQuit();
+            })
+            // Typeset and hide editor on :x or :wq
+            VimApi.defineEx("x", "x", function(cm, input) {
+                doTypeset();
+                doQuit();
+            })
+            VimApi.defineEx("wq", "wq", function(cm, input) {
+                doTypeset();
+                doQuit();
+            })
+            // Show document again
+            document.onkeydown = function(e) {
+                // Press q to bring back editor again
+                if (!e.ctrlKey && !e.shiftKey && e.key === 'q') {
+                    if (editorHidden) {
+                        doShow();
+                    }
+                }
+            }
+            // :help
+            VimApi.defineEx("help", "help", function(cm, input) {
+                if (previousText === null) {
+                    // Enter help mode
+                    previousText = editor.getValue()
+                    editor.setValue(document.getElementById('help_text').innerText)
+                    doTypeset()
+                }
+                else {
+                    // Exit help mode
+                    editor.setValue(previousText)
+                    previousText = null
+                    doTypeset()
+                }
+            })
+            // :share To get link to share text
+            VimApi.defineEx("share", "share", function(cm, input) {
+                let base64 = encodeStr(editor.getValue());
+
+                let url = new URL(document.URL);
+                url.searchParams.set("text", base64);
+                alert(url.href);
+            })
+        })
+
+        window.addEventListener("load", function() {
+            notify("Type :w and press <Enter> to typeset; Type :help and press <Enter> for help");
+
+            // Load text from URL arg: "text"
+            // May fail if provided base64 is bad
+            try {
+                let url = new URL(document.URL);
+                let base64 = url.searchParams.get("text");
+                if (base64 != null) {
+                    editor.setValue(decodeStr(base64));
+                    doTypeset();
+                }
+            } catch (err) {
+                notify("Failed to load text: " + err);
+            }
+        });
+    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script async src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js" integrity="sha512-EAKzSKex+PXC0U9OG13r1059ysjrjkJEpZoONCnZa0mBROY28iBOOxZSErUVw1LzLr2+U5PhR7zPCPKidUVJqg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    </body>
+</html>

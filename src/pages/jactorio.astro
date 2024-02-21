@@ -1,0 +1,26 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ItemCard from "../components/ItemCard.astro";
+---
+
+<Layout title="Jactorio">
+    <main>
+        <ItemCard
+            links={[
+                ["GitHub", "https://github.com/jaihysc/jactorio"],
+                ["Download", "https://github.com/jaihysc/Jactorio/releases"],
+                ["Weekly Log", "https://github.com/jaihysc/Jactorio/wiki/Devlog"],
+            ]},
+            imageSrc="/jactorio.png">
+            <p>My attempt at recreating <a href="https://factorio.com/">Factorio</a>, developed over the span of 2 years.</p>
+            <p>Written in C++ 17, rendering using OpenGL, loads runtime data using Python, builds via CMake. For more information on the development process, see the weekly log.</p>
+            <p>If you wish to try it out, you can find automated releases from Azure Pipelines at the downloads tab.
+                If you do not trust the releases from me, you can build it yourself at the Github tab where you will find instructions.</p>
+            <p>You can open the menu by pressing <code>escape</code>, where you can find the full list of keybinds.
+                Some items are not craftable but can spawned in from the debug menu by pressing backtick(<code>`</code>).
+                The game will save to <code>save/</code>, settings to <code>settings.json</code>, log to <code>log.txt</code> in the directory of the executable.
+            </p>
+            <p>If you have any feedback you can leave an issue on Github, I will attempt to address them in my free time.</p>
+        </ItemCard>
+    </main>
+</Layout>

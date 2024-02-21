@@ -1,0 +1,15 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ItemCard from "../components/ItemCard.astro";
+---
+
+<Layout title="Hardware">
+    <main>
+        <ItemCard
+            links={[["High Voltage Generator", "/hv-generator"]]},
+            imageSrc="/hv-generator.png">
+            <p>Generates continuous 30 kV arc from 3 V source.</p>
+            <p>Simulated circuit in LTSpice, prototyped with solder and breadboards, PCB designed in KiCAD, fabricated by JLCPCB.</p>
+        </ItemCard>
+    </main>
+</Layout>

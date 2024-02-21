@@ -1,0 +1,79 @@
+---
+interface Props {
+    links: string[][]; // Array of links. For each element, index 0 is title, index 1 is href
+	imageSrc: string;
+}
+
+const { links, imageSrc } = Astro.props;
+---
+
+<!-- Image on the left, link and description on the right -->
+<div class="card">
+    <img class="card-image" src={imageSrc} alt="Image"/><div class="card-contents">
+        <li class="link-card">
+            <!-- Show each of the provided links -->
+            {links.map((link) => (
+                <a href={link[1]}>
+                    <h3>
+                        {link[0]}
+                        <span>&rarr;</span>
+                    </h3>
+                </a>
+            ))}
+        </li>
+        <slot></slot>
+    </div>
+</div>
+
+<style>
+    /* Spacing between cards */
+    .card {
+        padding-bottom: 1rem;
+    }
+    /* Image on left, description on right */
+    .card-image {
+        display: inline-block;
+        vertical-align: top;
+    }
+    .card-contents {
+        display: inline-block;
+        vertical-align: top;
+    }
+    @media (min-width: 800px) {
+        .card-image {
+            margin-right: 0.5%;
+            width: 49.5%;
+        }
+        .card-contents {
+            margin-left: 0.5%;
+            width: 49.5%;
+        }
+    }
+    @media (max-width: 800px) {
+        .card-image {
+            width: 100%;
+        }
+        .card-contents {
+            width: 100%;
+            padding-top: 10px;
+        }
+    }
+    /* Main title / link */
+	.link-card {
+		display: flex;
+		background-color: whitesmoke;
+	}
+	.link-card a {
+		border: 1px solid #23262d;
+		color: black;
+		opacity: 0.8;
+		padding: 0.5rem 1.5rem;
+		width: 100%;
+	}
+	.link-card a:is(:hover, :focus-within) {
+		background-color: #ddd; */
+	}
+	h3 {
+        margin: 0;
+	}
+</style>

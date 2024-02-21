@@ -1,0 +1,27 @@
+---
+import Layout from "../layouts/Layout.astro";
+import ItemCard from "../components/ItemCard.astro";
+---
+
+<Layout title="Software">
+    <main>
+        <ItemCard
+            links={[["Jactorio", "/jactorio"]]}, imageSrc="/jactorio.png">
+            <p>Recreation of the game <a href="https://factorio.com/">Factorio</a>.</p>
+            <p>It uses OpenGL for rendering and loads runtime data using Python. It is written in C++17, built via CMake, with automated builds running on Microsoft Azure.</p>
+            <p>I spent a significant amount of time optimizing the renderer, making use of threading to reduce frame times. When that was insufficient, I tuned the assembly in hot paths by assessing the compiler generated assembly and restructured code to convince the compiler to emit better assembly and redesigned data structures to take advantage of cache locality.</p>
+        </ItemCard>
+        <ItemCard
+            links={[["C Compiler", "https://github.com/jaihysc/cc"]]}, imageSrc="/cc.png">
+            <p>A C99 compiler I wrote, in C.</p>
+            <p>It currently supports all the basic language constructs: conditionals, loops, expressions, arrays, pointers, function calls, and so on.</p>
+            <p>It uses top-down recursive descent to build nodes of language productions. The nodes are translated to a custom intermediate language, which are then converted into assembly via macro expansion and register allocation with graph coloring.</p>
+        </ItemCard>
+        <ItemCard
+            links={[["Aircraft Realism", "https://mods.factorio.com/mod/AircraftRealism"]]}, imageSrc="/aircraft.jpg">
+            <p>Framework to add aircraft to the game <a href="https://factorio.com/">Factorio</a>, the API is documented <a href="https://github.com/jaihysc/Factorio-AircraftRealism/blob/master/Docs/AddingNewPlanes.md">here</a>.</p>
+            <p>The result is a product of the collaborative contributions from various individuals on GitHub and Factorio Forums - making suggestions, bug reports, and contributing code.</p>
+            <p>It exploits existing features of the game to give the illusion of taking off and landing. Imitating takeoff using two cars with different collisions, one for the grounded plane, another for the airborne plane. Information about planes is serialized in Lua and stored across dummy entities which are created only for holding the serialized data</p>
+        </ItemCard>
+    </main>
+</Layout>

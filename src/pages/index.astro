@@ -1,0 +1,46 @@
+---
+import Layout from "../layouts/Layout.astro";
+import LinkCard from "../components/LinkCard.astro";
+---
+
+<Layout title="Johnny Cai">
+	<main>
+		<p>Electrical Engineering Student | McMaster University</p>
+		<ul role="list" class="link-card-grid">
+			<LinkCard href="https://github.com/jaihysc" title="GitHub" />
+			<LinkCard href="https://www.linkedin.com/in/jaihysc" title="LinkedIn" />
+		</ul>
+
+		<div class="tools">
+			<p>Tools</p>
+			<ul role="list" class="link-card-grid">
+				<LinkCard href="/latex" title="LaTeX Equation" />
+			</ul>
+		</div>
+	</main>
+</Layout>
+
+<style>
+	main {
+		margin: auto;
+		width: 800px;
+		max-width: calc(100% - 2rem);
+		font-size: 20px;
+		line-height: 1.6;
+	}
+	h1 {
+		text-align: center;
+	}
+	p {
+		text-align: center;
+	}
+	.link-card-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(24ch, 1fr));
+		gap: 1rem;
+		padding: 0;
+	}
+	.tools {
+		margin-top: 100px;
+	}
+</style>
