@@ -9,7 +9,13 @@ import ItemCard from "../components/ItemCard.astro";
             links={[["High Voltage Generator", "/hv-generator"]]},
             imageSrc="/hv-generator.png">
             <p>Generates continuous 30 kV arc from 3 V source.</p>
-            <p>Simulated circuit in LTSpice, prototyped with solder and breadboards, PCB designed in KiCAD, fabricated by JLCPCB.</p>
+            <p>Simulated with LTSpice, PCB designed in KiCAD.</p>
+        </ItemCard>
+        <ItemCard
+            links={[["Even Higher Voltage Generator", ""]]},
+            imageSrc="/hv-generator2.png">
+            <p>I seem to have an affinity for high voltages.</p>
+            <p>Simulated with PSpice, PCB designed in Cadence Allegro.</p>
         </ItemCard>
     </main>
 </Layout>

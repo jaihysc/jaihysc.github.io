@@ -6,16 +6,8 @@ import LinkCard from "../components/LinkCard.astro";
 <Layout title="Johnny Cai">
 	<main>
 		<ul role="list" class="link-card-grid">
-			<LinkCard href="https://github.com/jaihysc" title="GitHub" />
-			<LinkCard href="https://www.linkedin.com/in/jaihysc" title="LinkedIn" />
+			<LinkCard href="/latex" title="LaTeX Equation" />
 		</ul>
-
-		<div class="tools">
-			<p>Tools</p>
-			<ul role="list" class="link-card-grid">
-				<LinkCard href="/latex" title="LaTeX Equation" />
-			</ul>
-		</div>
 	</main>
 </Layout>
 
@@ -38,8 +30,5 @@ import LinkCard from "../components/LinkCard.astro";
 		grid-template-columns: repeat(auto-fit, minmax(24ch, 1fr));
 		gap: 1rem;
 		padding: 0;
-	}
-	.tools {
-		margin-top: 100px;
 	}
 </style>
