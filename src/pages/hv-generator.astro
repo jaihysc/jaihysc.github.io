@@ -3,22 +3,26 @@ import Layout from "../layouts/Layout.astro";
 import ItemCard from "../components/ItemCard.astro";
 ---
 
-<Layout title="HV Generator">
+<Layout title="HV Generator" backHref="/hardware">
     <main>
         <ItemCard
             links={[]}, imageSrc="/hv-generator-schematic.png">
-            <p>This circuit generates 30 KV at the spark gap on the right from a 3 V input at 0.6 A.</p>
-            <p>T1 is operated in flyback to charge C3 to 430 V, then discharges across T2 for the final 30 kV arc.</p>
-            <p>The left side of T1 forms an oscillator. Upon power-up, current flows through T1 3 to 4, this is reflected in 1 to 2. As drain current rises, 1 to 2 current rises. Thus, the voltage at the gate rises, further increasing drain current per FET equation.</p>
-            <p>Eventually, the drain current cannot increase sufficiently, the inductor raises the drain voltage to increase the drain current. The gate voltage further rises and the inductor further raises drain voltage. This continues until the inductor is discharged.</p>
-            <p>The 4 to 3 (drain to supply) voltage is reflected in the secondary, charging C3 through D2. Once C3 reaches 400 V, the zeners D3, D4 conduct, charging C4. Once C3 charges to 430 V thus C4 charged to 30 V, DIAC D10 conducts to trigger the larger SCR D11 to discharge C3 across T2. The DIAC is necessary as T1 operated in flyback does not have sufficient current to trigger SCR D11 on its own.</p>
+            <p>The circuit consists of 2 parts: Oscillator (T1 primary) and step-up (T1 secondary).</p>
+            <p>The oscillator is described in detail below. In summary, it charges C3 to 430 V, then discharges across T2 for the final 30 kV arc.</p>
             <p>D1 protects MOSFET Q1 from high voltage pulses, D6-D9 clamps the maximum voltage on C3 and C4 to 440 V and 40 V respectively, R2 limits the current to SCR D11 when C4 discharges.</p>
         </ItemCard>
         <ItemCard
-            links={[]}, imageSrc="/hv-generator-schematic-bjt.png">
-            <p>We can achieve a similar circuit with BJTs, reversing T1 coil 1 to 2.</p>
-            <p>Upon power-up, Q1 is in saturation. Current flows down L1, this is reflected in L2 <em>right to left</em>. As collector current rises, base current falls. Thus, the voltage at the base rises, further increasing collector current per BJT equation.</p>
-            <p>Eventually, the collector current cannot increase sufficiently, the inductor raises the collector voltage to increase the collector current. The base voltage further rises and the inductor further raises collector voltage. This continues until the inductor is discharged.</p>
+            links={[]}, imageSrc="/hv-generator-sim1.png">
+            <p>Circuit model for simulation is shown on the left. L0 and L2 are coupled to provide positive feedback.</p>
+        </ItemCard>
+        <ItemCard
+            links={[]}, imageSrc="/hv-generator-sim2.png">
+            <p>The vpri (blue) spike at t=0 is L0 charging, feedback discharges gate vg (red). Next, biasing network charges vg and MOSFET begins conducting. L0 discharging and supply provides current through MOSFET, IR drop decreases v1 (green) and feedback charges vg, increasing current.</p>
+            <p>Current through L0 decreases faster than MOSFET current. At t=18 ms L0 charges again, producing vpri spike and discharging vg to repeat the process.</p>
+        </ItemCard>
+        <ItemCard
+            links={[]}, imageSrc="/hv-generator-sim3.png">
+            <p>Observe that without an inductor for feedback there is still a pulse at t=4 ms. However, without discharging vg (red), v1 (green) settles and it stops oscillating.</p>
         </ItemCard>
     </main>
 </Layout>

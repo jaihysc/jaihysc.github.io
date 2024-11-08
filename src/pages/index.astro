@@ -3,8 +3,12 @@ import Layout from "../layouts/Layout.astro";
 import LinkCard from "../components/LinkCard.astro";
 ---
 
-<Layout title="Johnny Cai">
+<Layout title="Index">
 	<main>
+		<ul role="list" class="link-card-grid">
+			<LinkCard href="/hardware" title="Hardware" />
+			<LinkCard href="/software" title="Software" />
+		</ul>
 		<ul role="list" class="link-card-grid">
 			<LinkCard href="/latex" title="LaTeX Equation" />
 		</ul>
@@ -19,7 +23,7 @@ import LinkCard from "../components/LinkCard.astro";
 		font-size: 20px;
 		line-height: 1.6;
 	}
-	h1 {
+	h1, h2 {
 		text-align: center;
 	}
 	p {
