@@ -17,12 +17,7 @@ import ItemCard from "../components/ItemCard.astro";
         </ItemCard>
         <ItemCard
             links={[]}, imageSrc="/hv-generator-sim2.png">
-            <p>The vpri (blue) spike at t=0 is L0 charging, feedback discharges gate vg (red). Next, biasing network charges vg and MOSFET begins conducting. L0 discharging and supply provides current through MOSFET, IR drop decreases v1 (green) and feedback charges vg, increasing current.</p>
-            <p>Current through L0 decreases faster than MOSFET current. At t=18 ms L0 charges again, producing vpri spike and discharging vg to repeat the process.</p>
-        </ItemCard>
-        <ItemCard
-            links={[]}, imageSrc="/hv-generator-sim3.png">
-            <p>Observe that without an inductor for feedback there is still a pulse at t=4 ms. However, without discharging vg (red), v1 (green) settles and it stops oscillating.</p>
+            <p>Initially MOSFET conducts and L0 is charging, positive feedback increases gate voltage vg (red) to further increase current. As current increases, IR drop decreases v1 (green) and vg falls. At t=18 ms L0 discharges to maintain current, positive feedback decreases vg, further decreasing current - producing the vpri spike (blue).</p>
         </ItemCard>
     </main>
 </Layout>
