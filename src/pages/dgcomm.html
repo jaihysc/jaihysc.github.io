@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <title>Digital Communication Demo</title>
+    <meta name="Description" content="Digital Communication Demo">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <main>
+        <h1>Digital Communication Demo</h1>
+        <p>Reference: Digital Communications, John G. Proakis, Masoud Salehi</p>
+        <h2><span>Tx</span></h2>
+        <div>
+            <div id="tx-eye" class="section-detail"></div>
+            <h3>Pulse</h3>
+            <div style="height: 400px">
+                <div class="section-left">
+                    <select id="tx-pulse-group-select" class="section-select-head" size=1></select>
+                    <select id="tx-pulse-select" class="section-select-body" size=2></select>
+                    <div id="tx-pulse-option"></div>
+                </div>
+                <div class="section-right">
+                    <div id="tx-pulse-figure1"></div>
+                    <div id="tx-pulse-figure2"></div>
+                </div>
+                <div class="section-center">
+                    <div id="tx-pulse-time" class="section-detail"></div>
+                    <div id="tx-pulse-freq" class="section-detail"></div>
+                </div>
+            </div>
+        </div>
+        <h2><span>Channel</span></h2>
+        <div>
+        </div>
+        <h2><span>Rx</span></h2>
+        <div>
+            <h3>Equalization</h3>
+        </div>
+
+    </main>
+</body>
+<style type="text/css" media="screen">
+    html {
+		font-family: system-ui, sans-serif;
+    }
+    main {
+        margin: auto;
+        width: 1200px;
+        max-width: calc(100% - 2rem);
+        font-size: 10pt;
+        line-height: 1.6;
+    }
+
+    h2 {
+        font-size: 18pt;
+        margin-bottom: 0;
+        position: relative;
+    }
+    h2 span {
+        background-color: white;
+        padding-right: 10px;
+    }
+    h2:after { /* Horizontal line after text */
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 8pt;
+        border-top: 1px solid black;
+        z-index: -1;
+    }
+    h3 {
+        font-size: 16pt;
+        margin-bottom: 0;
+    }
+    .MathJax {
+        font-size: 12pt;
+    }
+
+    /* Sections */
+
+    .section-left {
+        float: left;
+        width: 200px;
+        height: 100%;
+    }
+    .section-center {
+        float: right;
+        width: calc(100% - 600px);
+        height: 100%;
+    }
+    .section-right {
+        float: right;
+        width: 400px;
+        height: 100%;
+    }
+    .section-select-head {
+        width: 100%;
+        height: 20px;
+        overflow: hidden;
+    }
+    .section-select-body {
+        width: 100%;
+        height: calc(60% - 20px);
+        scrollbar-width: none;
+    }
+    .section-detail {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 200px;
+    }
+
+    /* Inputs */
+
+    .input-div {
+        display: flex;
+    }
+    .input-div label {
+        margin-right: auto;
+    }
+    .input-div input {
+        width: 80px;
+    }
+</style>
+<script>
+    // Config =================================================================
+
+    MathJax = {
+        tex: {
+            inlineMath: [
+                ["$", "$"],
+            ],
+            displayMath: [
+                ["$$", "$$"],
+            ],
+        },
+        options: {
+            ignoreHtmlClass: "mathjax-ignore"
+        }
+    };
+
+    function sinc(x) { // sin(x) / x
+        return (Math.abs(x) < 1e-4) ? 1 : (Math.sin(x) / (x));
+    }
+
+    function raisedCosineT(t, t0, b) {
+        let denom = 1 - 4 * b * b * t * t / t0 / t0;
+        if (Math.abs(denom) < 1e-4) { // Take limit to fix divide by 0
+            return (Math.cos(Math.PI * t / t0) * Math.cos(Math.PI * b * t / t0) - b * Math.sin(Math.PI * t / t0) * Math.sin(Math.PI * b * t / t0)) /
+                (1 - 12 * b * b * t * t / t0 / t0);
+        }
+        else {
+            return sinc(Math.PI * t / t0) * Math.cos(Math.PI * b * t / t0) / denom;
+        }
+    }
+
+    class NumberOption {
+        constructor(name, min, max, step) {
+            this.name = name,
+            this.min = min;
+            this.max = max;
+            this.step = step;
+        }
+    }
+
+    class TxSignal {
+        constructor(name, timeLatex, freqLatex, time, freq, options=[]) {
+            this.name = name;
+            this.timeLatex = timeLatex; // Equation for signal
+            this.freqLatex = freqLatex;
+            this.timeFunc = time; // Function describing signal as function of time (t, t0)
+            this.freqFunc = freq;
+            this.options = options; // NumberOption
+            this.optionVals = new Array(options.length).fill(0); // Value of each option
+            this.onOptionChanged = () => {};
+        }
+
+        // Evaluates signal at point in time / freq
+        time(t, t0) {
+            // Pass t, t0, and options as arguments
+            return this.timeFunc.apply(null, [t, t0].concat(this.optionVals));
+        }
+        freq(f, t0) {
+            return this.freqFunc.apply(null, [f, t0].concat(this.optionVals));
+        }
+
+        // Create HTML elements for options
+        createOptions() {
+            let parentDivs = [];
+            for (let i = 0; i < this.options.length; ++i) {
+                const option = this.options[i];
+
+                let label = document.createElement("label");
+                label.innerText = option.name;
+
+                let input = document.createElement("input");
+                input.type = "number";
+                input.min = option.min;
+                input.max = option.max;
+                input.step = option.step;
+                input.value = this.optionVals[i];
+                input.onchange = () => {
+                    this.optionVals[i] = Number(input.value);
+                    this.onOptionChanged();
+                };
+
+                let parentDiv = document.createElement("div");
+                parentDiv.classList.add("input-div");
+                parentDiv.append(label);
+                parentDiv.append(input);
+
+                parentDivs.push(parentDiv);
+            }
+            return parentDivs;
+        }
+    }
+    const txSignals = {
+        "Binary": [
+            new TxSignal(
+                "Nyquist",
+                String.raw`$$\operatorname{sinc} (\pi t/T_0)$$`,
+                String.raw`$$T_0 \operatorname{rect} (T_0 f)$$`,
+                (t, t0) => t0 * sinc(Math.PI * t / t0),
+                (f, t0) => (Math.abs(f/t0) < 0.5) ? t0 : 0,
+            ),
+            new TxSignal(
+                "Raised Cosine",
+                String.raw`$$\operatorname{sinc}(\pi t / T_0) \frac{\cos(\pi \beta t/T_0)}{1 - 4\beta^2t^2/T_0^2}$$`,
+                String.raw`$$\begin{cases}
+                T_0 & 0 \leq |f| \leq \frac{1-\beta}{2T_0} \\
+                \frac{T_0}{2} \left(1 + \cos\left[ \frac{\pi T}{\beta} \left(|f|-\frac{1-\beta}{2T_0}\right) \right]\right)
+                    & \frac{1-\beta}{2T_0} \leq |f| \leq \frac{1+\beta}{2T_0} \\
+                \end{cases}$$`,
+                raisedCosineT,
+                (f, t0, b) => (Math.abs(f) < ((1 - b) / (2 * t0))) ? t0 :
+                    ((b == 0 || Math.abs(f) > ((1 + b) / (2 * t0))) ? 0 :(t0 / 2 * (1 + Math.cos( Math.PI * t0 / b * (Math.abs(f) - ((1 - b) / (2 * t0))) )))),
+                [
+                    new NumberOption("$\\beta$", 0, 1, 0.1)
+                ]
+            ),
+            new TxSignal(
+                "Partial Response",
+                String.raw`$$\operatorname{sinc}(2\pi Wt) + \operatorname{sinc}\left[2\pi\left(Wt - \frac{1}{2}\right)\right] \\ W = \frac{1}{2T}$$`,
+                String.raw`$$\frac{1}{W} e^{-j\pi f/2W} \cos \frac{\pi f}{2W} \operatorname{rect} f$$`,
+                (t, t0) => sinc(Math.PI * t / t0) + sinc(Math.PI * t / t0 - Math.PI),
+                (f, t0) => (Math.abs(f) < (t0 / 2)) ? (2 * t0 * Math.cos(Math.PI * f * t0)) : 0,
+            )
+        ]
+    };
+
+    // Plotting ===============================================================
+
+    // Plots provided data array in given figure (div)
+    function plot(figure, x, y) {
+        plotMultiple(figure, [x], [y]);
+    }
+
+    // Plots provided data arrays in given figure (div)
+    function plotMultiple(figure, xs, ys) {
+        if (xs.length != ys.length) {
+            throw Error("Number of X and Y data are not same length");
+            for (let i = 0; i < xs.length; ++i) {
+                if (xs[i].length != ys[i].length) {
+                    throw Error("X and Y data are not same length");
+                }
+            }
+        }
+
+        const width = 400;
+        const height = 200;
+        const margin = 5;
+
+        const svg = d3.create("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .attr("viewBox", [0, 0, width, height])
+            .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
+
+        // X axis through y=0
+        const yMin = Math.min(d3.min(ys, (y) => d3.min(y)), 0); // Clamp to 0 if yMin > 0
+        const yMax = d3.max(ys, (y) => d3.max(y));
+
+        const xAbsMax = d3.max(xs, (x) => d3.max(x, (d) => Math.abs(d)));
+        const xScale = d3.scaleLinear([-xAbsMax, xAbsMax], [margin, width - margin]);
+        svg.append("g")
+            .attr("transform", `translate(0, ${(height - 2 * margin) * yMax / (yMax - yMin) + margin})`)
+            .call(d3.axisTop(xScale));
+
+        // Centered Y axis
+        const yAbsMax = d3.max(ys, (y) => d3.max(y, (d) => Math.abs(d)));
+        const yScale = d3.scaleLinear([yMin, yMax], [height - margin, margin]);
+        svg.append("g")
+            .attr("transform", `translate(${width / 2}, 0)`)
+            .call(d3.axisLeft(yScale));
+
+        // Draw curve
+        for (let i = 0; i < xs.length; ++i) {
+            svg.append("path")
+                .datum(d3.range(0, xs[i].length)) // xs.length == ys.length
+                .attr("fill", "none")
+                .attr("stroke", "black")
+                .attr("stroke-width", 1)
+                .attr("d", d3.line((j) => xScale(xs[i][j]), (j) => yScale(ys[i][j]))
+            );
+        }
+
+        figure.innerHTML = ""; // Clear children
+        figure.append(svg.node());
+    }
+
+    function plotTxPulse(signal) {
+        const x = d3.range(-3, 3, 0.01);
+        y = x.map(x => signal.time(x, 1));
+        plot(document.getElementById("tx-pulse-figure1"), x, y);
+
+        y = x.map(x => signal.freq(x, 1));
+        plot(document.getElementById("tx-pulse-figure2"), x, y);
+    }
+
+    function plotTxEye(signal) {
+        const x = d3.range(-0.5, 0.5, 0.01); // 1 UI
+
+        // Sum time shifted versions of signal of different signs
+        // n =  -3 -2 -1  0
+        // ------------------
+        // sign -1 -1 -1 +1
+        //      -1 -1 +1 -1
+        //      -1 -1 +1 +1
+        let genPulseTrain = (nStart, nEnd) => {
+            // Sum positive and negative version of current n with previous ys
+            const n = nStart;
+            if (n > nEnd) {
+                return [new Array(x.length).fill(0)];
+            }
+
+            let ysPos = genPulseTrain(n + 1, nEnd);
+            let ysNeg = [new Array(ysPos.length).fill(0)];
+            for (let i = 0; i < ysPos.length; ++i) { // Copy ysPos by value
+                ysNeg[i] = ysPos[i].slice();
+            }
+
+            let yPos = x.map(x => signal.time(x - n, 1));
+            let yNeg = x.map(x => -1 * signal.time(x - n, 1));
+            for (let i = 0; i < ysPos.length; ++i) {
+                for (let j = 0; j < yPos.length; ++j) {
+                    ysPos[i][j] += yPos[j];
+                    ysNeg[i][j] += yNeg[j];
+                }
+            }
+
+            // Merge positive and negative version together
+            let ys = [];
+            for (let i = 0; i < ysPos.length; ++i) {
+                ys.push(ysPos[i]);
+                ys.push(ysNeg[i]);
+            }
+            return ys;
+        };
+
+        let ys = genPulseTrain(-3, 3);
+        let xs = [];
+        for (let i = 0; i < ys.length; ++i) {
+            xs.push(x);
+        }
+        plotMultiple(document.getElementById("tx-eye"), xs, ys);
+    }
+
+    function plotTx() {
+        const signal = uiTxPulse;
+        plotTxPulse(signal);
+        plotTxEye(signal);
+    }
+
+    // UI Logic ===============================================================
+
+    let uiTxPulse = null;
+
+    function uiTxPulseSelection()  {
+        let txPulseGroupSelect = document.getElementById("tx-pulse-group-select");
+        txPulseGroupSelect.innerHTML = "";
+        txPulseGroupSelect.onchange = () => {
+            // Selected signal group, load the signals
+            const signalGroup = txPulseGroupSelect.value;
+
+            let txPulseSelect = document.getElementById("tx-pulse-select");
+            txPulseSelect.innerHTML = "";
+            txPulseSelect.onchange = () => {
+                // Selected signal in group, load details
+                const signal = txSignals[signalGroup][txPulseSelect.selectedIndex];
+                uiTxPulse = signal;
+
+                document.getElementById("tx-pulse-time").innerText = signal.timeLatex;
+                document.getElementById("tx-pulse-freq").innerText = signal.freqLatex;
+
+                // Create options
+                let optionDiv = document.getElementById("tx-pulse-option");
+                optionDiv.innerHTML = "";
+                optionDiv.append(...signal.createOptions());
+                signal.onOptionChanged = plotTx;
+
+                MathJax.typeset();
+                plotTx();
+            }
+
+            for (const signal of txSignals[signalGroup]) {
+                let newOption = document.createElement("option");
+                newOption.innerText = signal.name;
+                txPulseSelect.append(newOption)
+            }
+
+            txPulseSelect.selectedIndex = 0;
+            txPulseSelect.onchange();
+        }
+
+        for (const signalGroup of Object.keys(txSignals)) {
+            let newGroupOption = document.createElement("option");
+            newGroupOption.innerText = signalGroup;
+            txPulseGroupSelect.append(newGroupOption);
+        }
+
+        txPulseGroupSelect.selectedIndex = 0;
+        txPulseGroupSelect.onchange();
+    }
+
+    window.addEventListener("load", () => {
+        uiTxPulseSelection();
+    });
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" integrity="sha512-vc58qvvBdrDR4etbxMdlTt4GBQk1qjvyORR2nrsPsFPyrs+/u5c3+1Ct6upOgdZoIl7eq6k3a1UPDSNAQi/32A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.0.0/tex-svg.min.js" integrity="sha512-JBvT4lHnIhbktDR7xvJbyObGFZU3uNkwiN7ubopyb4RkUDOHQuZpS/8izmKsJG3k+Mvj11FMyeRWrjgxEJ6K4Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</html>
