@@ -1,40 +1,135 @@
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
-    <title>Digital Communication Demo</title>
-    <meta name="Description" content="Digital Communication Demo">
+    <title>Digital Communications Demo</title>
+    <meta name="Description" content="Digital Communications Demo">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 <body>
     <main>
-        <h1>Digital Communication Demo</h1>
+        <h1>Digital Communications Demo</h1>
+        <p>The communication system is divided into components, each component having multiple sections. Data flows from the top section to the bottom section, and from the top component to the bottom component. Below the horizontal rule for each component are plots of its status.</p>
         <p>Reference: Digital Communications, John G. Proakis, Masoud Salehi</p>
         <h2><span>Tx</span></h2>
         <div>
-            <div id="tx-eye" class="section-detail"></div>
-            <h3>Pulse</h3>
-            <div style="height: 400px">
+            <div class="section-status">
+                <div id="tx-eye" class="section-detail"></div>
+            </div>
+            <!-- <h3>Encoder</h3> -->
+            <!-- <h3>FFE</h3> -->
+            <!-- <div>
+                TBD
+            </div> -->
+            <h3>Signal</h3>
+            <div class="section">
                 <div class="section-left">
-                    <select id="tx-pulse-group-select" class="section-select-head" size=1></select>
-                    <select id="tx-pulse-select" class="section-select-body" size=2></select>
-                    <div id="tx-pulse-option"></div>
-                </div>
-                <div class="section-right">
-                    <div id="tx-pulse-figure1"></div>
-                    <div id="tx-pulse-figure2"></div>
+                    <div class="subsection-left">
+                        <select id="tx-signal-group-select" class="section-select-head" size=1></select>
+                        <select id="tx-signal-select" class="section-select-body" size=2></select>
+                    </div>
+                    <div class="subsection-right">
+                        <div id="tx-signal-param" class="section-select-params"></div>
+                    </div>
                 </div>
                 <div class="section-center">
-                    <div id="tx-pulse-time" class="section-detail"></div>
-                    <div id="tx-pulse-freq" class="section-detail"></div>
+                    <div id="tx-signal-figure1"></div>
+                    <div id="tx-signal-figure2"></div>
+                </div>
+                <div class="section-right">
+                    <div id="tx-signal-time" class="section-detail"></div>
+                    <div id="tx-signal-freq" class="section-detail"></div>
                 </div>
             </div>
         </div>
         <h2><span>Channel</span></h2>
         <div>
+            <div class="section-status">
+                <div id="channel-eye" class="section-detail"></div>
+                <div id="channel-eye-noisy" class="section-detail"></div>
+            </div>
+            <h3>Response</h3>
+            <div class="section">
+                <div class="section-left">
+                    <div class="subsection-left">
+                        <select id="channel-response-group-select" class="section-select-head" size=1></select>
+                        <select id="channel-response-select" class="section-select-body" size=2></select>
+                    </div>
+                    <div class="subsection-right">
+                        <div id="channel-response-param" class="section-select-params"></div>
+                    </div>
+                </div>
+                <div class="section-center">
+                    <div id="channel-response-figure1"></div>
+                    <div id="channel-response-figure2"></div>
+                </div>
+                <div class="section-right">
+                    <div id="channel-response-time" class="section-detail"></div>
+                    <div id="channel-response-freq" class="section-detail"></div>
+                </div>
+            </div>
+            <h3>AWGN</h3>
+            <div class="section-left">
+                <div class="subsection-left">
+                    2 sided PSD
+                </div>
+                <div class="subsection-right">
+                    <div class="input-div">
+                        <label>$2N_0$</label>
+                        <input id="awgn-value" type="number" min="0" max="1" step="0.01" value="0.01">
+                    </div>
+                </div>
+            </div>
         </div>
         <h2><span>Rx</span></h2>
         <div>
-            <h3>Equalization</h3>
+            <div class="section-status">
+                <div id="rx-eye-filtered" class="section-detail"></div>
+                <div id="rx-scatter-adc" class="section-detail"></div>
+                <div id="rx-scatter-ffe" class="section-detail"></div>
+                <p>BER&nbsp;<p id="rx-ber"></p></p>
+            </div>
+            <h3>Filter</h3>
+            <div class="section">
+                <div class="section-left">
+                    <div class="subsection-left">
+                        <select id="rx-filter-group-select" class="section-select-head" size=1></select>
+                        <select id="rx-filter-select" class="section-select-body" size=2></select>
+                    </div>
+                    <div class="subsection-right">
+                        <div id="rx-filter-param" class="section-select-params"></div>
+                    </div>
+                </div>
+                <div class="section-center">
+                    <div id="rx-filter-figure1"></div>
+                    <div id="rx-filter-figure2"></div>
+                </div>
+                <div class="section-right">
+                    <div id="rx-filter-time" class="section-detail"></div>
+                    <div id="rx-filter-freq" class="section-detail"></div>
+                </div>
+            </div>
+            <h3>ADC</h3>
+            <h3>FFE</h3>
+            <div class="section">
+                <div class="section-left">
+                    <div class="subsection-left">
+                        <div class="input-div">
+                            <button id="rx-ffe-reset-button" type="button">Reset</button>
+                            <button id="run-dsp-button" type="button">Run DSP</button>
+                        </div>
+                    </div>
+                    <div id="rx-ffe-coeffs" class="subsection-right">
+                    </div>
+                </div>
+                <div class="section-center">
+                    <div id="rx-ffe-figure1"></div>
+                    <div id="rx-ffe-figure2"></div>
+                </div>
+            </div>
+            <!-- <h3>MLSD</h3>
+            <div>
+                TBD
+            </div> -->
         </div>
 
     </main>
@@ -51,8 +146,11 @@
         line-height: 1.6;
     }
 
+    h1 {
+        font-size: 22pt;
+    }
     h2 {
-        font-size: 18pt;
+        font-size: 22pt;
         margin-bottom: 0;
         position: relative;
     }
@@ -66,7 +164,7 @@
         bottom: 0;
         left: 0;
         right: 0;
-        height: 8pt;
+        height: 14pt;
         border-top: 1px solid black;
         z-index: -1;
     }
@@ -80,21 +178,27 @@
 
     /* Sections */
 
+    .section {
+        display: flex;
+        flex-wrap: wrap;
+    }
     .section-left {
-        float: left;
-        width: 200px;
-        height: 100%;
+        display: flex;
+        width: 400px;
     }
     .section-center {
-        float: right;
-        width: calc(100% - 600px);
-        height: 100%;
+        width: 400px;
     }
     .section-right {
-        float: right;
         width: 400px;
-        height: 100%;
     }
+    .subsection-left {
+        width: 200px;
+    }
+    .subsection-right {
+        width: 200px;
+    }
+
     .section-select-head {
         width: 100%;
         height: 20px;
@@ -102,14 +206,29 @@
     }
     .section-select-body {
         width: 100%;
-        height: calc(60% - 20px);
+        height: calc(100% - 20px);
         scrollbar-width: none;
+    }
+    .section-select-params {
+        margin-top: 20px;
+        margin-left: 5px;
     }
     .section-detail {
         display: flex;
         align-items: center;
         justify-content: center;
         height: 200px;
+    }
+    .section-status {
+        outline: solid 1px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    #rx-ffe-coeffs {
+        height: 400px;
+        overflow-y: scroll;
     }
 
     /* Inputs */
@@ -145,65 +264,86 @@
         return (Math.abs(x) < 1e-4) ? 1 : (Math.sin(x) / (x));
     }
 
-    function raisedCosineT(t, t0, b) {
-        let denom = 1 - 4 * b * b * t * t / t0 / t0;
-        if (Math.abs(denom) < 1e-4) { // Take limit to fix divide by 0
-            return (Math.cos(Math.PI * t / t0) * Math.cos(Math.PI * b * t / t0) - b * Math.sin(Math.PI * t / t0) * Math.sin(Math.PI * b * t / t0)) /
-                (1 - 12 * b * b * t * t / t0 / t0);
-        }
-        else {
-            return sinc(Math.PI * t / t0) * Math.cos(Math.PI * b * t / t0) / denom;
-        }
+    function impulse(x) {
+        return (Math.abs(x) < 1e-4) ? 1 : 0;
     }
 
-    class NumberOption {
-        constructor(name, min, max, step) {
+    function rect(x) {
+        return (Math.abs(x) < 0.5) ? 1 : 0
+    }
+
+    // Constant structs describing parameters
+    class NumberParameter {
+        constructor(name, min, max, step, initial=min) {
             this.name = name,
             this.min = min;
             this.max = max;
             this.step = step;
+            this.initial = initial;
         }
     }
 
-    class TxSignal {
-        constructor(name, timeLatex, freqLatex, time, freq, options=[]) {
+    // Holds settings + user parameters for transfer function
+    class TransferFunction {
+        constructor(name, timeLatex, freqLatex, timeFunc, freqFunc, parameters=[]) {
             this.name = name;
             this.timeLatex = timeLatex; // Equation for signal
             this.freqLatex = freqLatex;
-            this.timeFunc = time; // Function describing signal as function of time (t, t0)
-            this.freqFunc = freq;
-            this.options = options; // NumberOption
-            this.optionVals = new Array(options.length).fill(0); // Value of each option
-            this.onOptionChanged = () => {};
+            this.timeFunc = timeFunc;   // Function describing time / frequency curve
+            this.freqFunc = freqFunc;
+            this.parameters = parameters; // NumberParameter
+
+            this.parameterValues = []; // Value of each option
+            for (const param of parameters) {
+                this.parameterValues.push(param.initial);
+            }
         }
 
-        // Evaluates signal at point in time / freq
-        time(t, t0) {
-            // Pass t, t0, and options as arguments
-            return this.timeFunc.apply(null, [t, t0].concat(this.optionVals));
-        }
-        freq(f, t0) {
-            return this.freqFunc.apply(null, [f, t0].concat(this.optionVals));
+        copy() {
+            let newTf = new TransferFunction(
+                this.name,
+                this.timeLatex,
+                this.freqLatex,
+                this.timeFunc,
+                this.freqFunc,
+                this.parameters,
+            );
+            return newTf;
         }
 
-        // Create HTML elements for options
-        createOptions() {
+        // Evaluates function at point in time / freq
+        evalTime(t) {
+            // Pass t, and parameters as arguments
+            return this.timeFunc.apply(null, [t].concat(this.parameterValues));
+        }
+        evalFreq(f) {
+            return this.freqFunc.apply(null, [f].concat(this.parameterValues));
+        }
+
+        // Create HTML elements for parameters
+        uiCreateParameters(onOptionChanged = () => {}) {
             let parentDivs = [];
-            for (let i = 0; i < this.options.length; ++i) {
-                const option = this.options[i];
+            for (let i = 0; i < this.parameters.length; ++i) {
+                const param = this.parameters[i];
 
                 let label = document.createElement("label");
-                label.innerText = option.name;
+                label.innerText = param.name;
 
                 let input = document.createElement("input");
                 input.type = "number";
-                input.min = option.min;
-                input.max = option.max;
-                input.step = option.step;
-                input.value = this.optionVals[i];
+                input.min = param.min;
+                input.max = param.max;
+                input.step = param.step;
+                input.value = this.parameterValues[i];
                 input.onchange = () => {
-                    this.optionVals[i] = Number(input.value);
-                    this.onOptionChanged();
+                    if (Number(input.value) < param.min) {
+                        input.value = param.min;
+                    }
+                    else if (Number(input.value) > param.max) {
+                        input.value = param.max;
+                    }
+                    this.parameterValues[i] = Number(input.value);
+                    onOptionChanged();
                 };
 
                 let parentDiv = document.createElement("div");
@@ -216,61 +356,216 @@
             return parentDivs;
         }
     }
-    const txSignals = {
-        "Binary": [
-            new TxSignal(
+
+    const cfgTxSignals = {
+        "Preset": [
+            new TransferFunction(
                 "Nyquist",
-                String.raw`$$\operatorname{sinc} (\pi t/T_0)$$`,
-                String.raw`$$T_0 \operatorname{rect} (T_0 f)$$`,
-                (t, t0) => t0 * sinc(Math.PI * t / t0),
-                (f, t0) => (Math.abs(f/t0) < 0.5) ? t0 : 0,
-            ),
-            new TxSignal(
-                "Raised Cosine",
-                String.raw`$$\operatorname{sinc}(\pi t / T_0) \frac{\cos(\pi \beta t/T_0)}{1 - 4\beta^2t^2/T_0^2}$$`,
-                String.raw`$$\begin{cases}
-                T_0 & 0 \leq |f| \leq \frac{1-\beta}{2T_0} \\
-                \frac{T_0}{2} \left(1 + \cos\left[ \frac{\pi T}{\beta} \left(|f|-\frac{1-\beta}{2T_0}\right) \right]\right)
-                    & \frac{1-\beta}{2T_0} \leq |f| \leq \frac{1+\beta}{2T_0} \\
-                \end{cases}$$`,
-                raisedCosineT,
-                (f, t0, b) => (Math.abs(f) < ((1 - b) / (2 * t0))) ? t0 :
-                    ((b == 0 || Math.abs(f) > ((1 + b) / (2 * t0))) ? 0 :(t0 / 2 * (1 + Math.cos( Math.PI * t0 / b * (Math.abs(f) - ((1 - b) / (2 * t0))) )))),
+                String.raw`$$A\operatorname{sinc} (\pi t/T_0)$$`,
+                String.raw`$$A T_0 \operatorname{rect} (T_0 f)$$`,
+                (t, a, t0=1) => a * sinc(Math.PI * t / t0),
+                (f, a, t0=1) => a * t0 * rect(t0 * f),
                 [
-                    new NumberOption("$\\beta$", 0, 1, 0.1)
+                    new NumberParameter("$A$", 0, 5, 0.1, 1)
                 ]
             ),
-            new TxSignal(
+            new TransferFunction(
+                "Raised Cosine",
+                String.raw`$$A \operatorname{sinc}(\pi t / T_0) \frac{\cos(\pi \beta t/T_0)}{1 - 4\beta^2t^2/T_0^2}$$`,
+                String.raw`$$\begin{cases}
+                AT_0   & 0 \leq |f| \leq \frac{1-\beta}{2T_0} \\
+                \frac{AT_0}{2} \left(1 + \cos\left[ \frac{\pi T}{\beta} \left(|f|-\frac{1-\beta}{2T_0}\right) \right]\right)
+                       & \frac{1-\beta}{2T_0} \leq |f| \leq \frac{1+\beta}{2T_0} \\
+                \end{cases}$$`,
+                (t, a, b, t0=1) => {
+                    let denom = 1 - 4 * b * b * t * t / t0 / t0;
+                    if (Math.abs(denom) < 1e-4) { // Take limit to fix divide by 0
+                        return a * (Math.cos(Math.PI * t / t0) * Math.cos(Math.PI * b * t / t0) - b * Math.sin(Math.PI * t / t0) * Math.sin(Math.PI * b * t / t0)) /
+                            (1 - 12 * b * b * t * t / t0 / t0);
+                    }
+                    else {
+                        return a * sinc(Math.PI * t / t0) * Math.cos(Math.PI * b * t / t0) / denom;
+                    }
+                },
+                (f, a, b, t0=1) => {
+                    if (Math.abs(f) < ((1 - b) / (2 * t0))) {
+                        return a * t0;
+                    }
+                    else if (b == 0 || Math.abs(f) > ((1 + b) / (2 * t0))) {
+                        return 0;
+                    }
+                    else {
+                        const argument = Math.PI * t0 / b * (Math.abs(f) - ((1 - b) / (2 * t0)));
+                        return a * t0 / 2 * (1 + Math.cos(argument));
+                    }
+                },
+                [
+                    new NumberParameter("$A$", 0, 5, 0.1, 1),
+                    new NumberParameter("$\\beta$", 0, 1, 0.1)
+                ]
+            ),
+            new TransferFunction(
                 "Partial Response",
-                String.raw`$$\operatorname{sinc}(2\pi Wt) + \operatorname{sinc}\left[2\pi\left(Wt - \frac{1}{2}\right)\right] \\ W = \frac{1}{2T}$$`,
-                String.raw`$$\frac{1}{W} e^{-j\pi f/2W} \cos \frac{\pi f}{2W} \operatorname{rect} f$$`,
-                (t, t0) => sinc(Math.PI * t / t0) + sinc(Math.PI * t / t0 - Math.PI),
-                (f, t0) => (Math.abs(f) < (t0 / 2)) ? (2 * t0 * Math.cos(Math.PI * f * t0)) : 0,
+                String.raw`$$A \operatorname{sinc}(2\pi Wt) + A \operatorname{sinc}\left[2\pi\left(Wt - \frac{1}{2}\right)\right] \\ W = \frac{1}{2T}$$`,
+                String.raw`$$\frac{A}{W} e^{-j\pi f/2W} \cos \frac{\pi f}{2W} \operatorname{rect} f$$`,
+                (t, a, t0=1) => a * sinc(Math.PI * t / t0) + a * sinc(Math.PI * t / t0 - Math.PI),
+                (f, a, t0=1) => (Math.abs(f) < (t0 / 2)) ? (2 * a * t0 * Math.cos(Math.PI * f * t0)) : 0,
+                [
+                    new NumberParameter("$A$", 0, 5, 0.1, 1)
+                ]
             )
         ]
     };
 
-    // Plotting ===============================================================
+    const cfgChannelResponses = {
+        "Low Pass": [
+            new TransferFunction(
+                "Ideal",
+                String.raw`$$A\delta(t)$$`,
+                String.raw`$$A$$`,
+                (t, a) => a * impulse(t) / simTimeStep, // Numeric integral: this multipled by plotTimeStep = 1
+                (f, a) => a,
+                [
+                    new NumberParameter("$A$", 0, 1, 0.1, 1)
+                ]
+            ),
+            new TransferFunction(
+                "Band Limited",
+                String.raw`$$2 A W \operatorname{sinc}(2 \pi W t)$$`,
+                String.raw`$$A \operatorname{rect}\left(\frac{f}{2W}\right)$$`,
+                (t, a, w) => 2 * a * w * sinc(2 * Math.PI * w * t),
+                (f, a, w) => a * rect(f / (2 * w)),
+                [
+                    new NumberParameter("$A$", 0, 1, 0.1, 1),
+                    new NumberParameter("$W$", 0, 5, 0.1, 0.5)
+                ]
+            ),
+            new TransferFunction(
+                "Roll-off",
+                String.raw`$$2AW\operatorname{sinc}(2W\pi t) + \\ \frac{-A\sin(2\pi w t)}{\pi t} + \frac{A\cos(2\pi wt) - A\cos(2\pi zt)}{2(z-w)(\pi t)^2}$$`,
+                String.raw`$$\begin{cases}
+                A                      & |f| \leq w \\
+                A\frac{z - |f|}{z - w} & w < |f| < z
+                \end{cases}$$`,
+                (t, a, w, z) => {
+                    // Integral contributions from square wave and rolloff
+                    let square = 2 * w * sinc(2 * w * Math.PI * t);
 
-    // Plots provided data array in given figure (div)
-    function plot(figure, x, y) {
-        plotMultiple(figure, [x], [y]);
+                    let rolloff = 0;
+                    if (z > w) {
+                        if (Math.abs(t) < 1e-4) {
+                            rolloff = z - w;
+                        }
+                        else {
+                            // + (w * Math.sin(2 * Math.PI * w * t) + Math.cos(2 * Math.PI * w * t) / (2 * Math.PI * t)) / ((z - w) * Math.PI * t)
+                            // - (z * Math.sin(2 * Math.PI * z * t) + Math.cos(2 * Math.PI * z * t) / (2 * Math.PI * t)) / ((z - w) * Math.PI * t)
+                            // - (z * Math.sin(2 * Math.PI * w * t)) / ((z - w) * Math.PI * t)
+                            // + (z * Math.sin(2 * Math.PI * z * t)) / ((z - w) * Math.PI * t)
+                            rolloff = -1 * Math.sin(2 * Math.PI * w * t) / (Math.PI * t)
+                            + (Math.cos(2 * Math.PI * w * t) - Math.cos(2 * Math.PI * z * t)) / (2 * (z - w) * Math.PI * Math.PI * t * t);
+                        }
+                    }
+                    return a * (square + rolloff);
+                },
+                (f, a, w, z) => (Math.abs(f) < w) ? a : ((Math.abs(f) < z) ? (a * (1 - (Math.abs(f) - w) / (z - w))) : 0),
+                [
+                    new NumberParameter("$A$", 0, 1, 0.1, 1),
+                    new NumberParameter("$W$", 0, 5, 0.1, 0.2),
+                    new NumberParameter("$Z$", 0, 5, 0.1, 0.6)
+                ]
+            ),
+        ]
+    };
+
+    const cfgRxFilters = {
+        "Low Pass": [],
+        "Matched Filter": []
+    };
+    for (const tf of cfgChannelResponses["Low Pass"]) {
+        // Copy each by value
+        cfgRxFilters["Low Pass"].push(tf.copy());
+    }
+    for (const tf of cfgTxSignals.Preset) {
+        cfgRxFilters["Matched Filter"].push(tf.copy());
+    }
+
+    // Simulation / Output plots ==============================================
+
+    const simTimeStep = 2 ** -6;
+    const simSymbols = 2048;
+    const simData = [];
+
+    function tToIdx(t) {
+        return Math.round(t / simTimeStep);
+    }
+
+    function convolve(x, y) {
+        if (x.length == 0 || y.length == 0) {
+            throw new Error("Empty vectors");
+        }
+        // Check elements are numbers
+        for (const val of x) {
+            if (typeof val != "number") {
+                throw new Error("Invalid X vector");
+            }
+        }
+        for (const val of y) {
+            if (typeof val != "number") {
+                throw new Error("Invalid Y vector");
+            }
+        }
+
+        const result = new Array(x.length + y.length - 1).fill(0);
+        for (let i = 0; i < x.length; ++i) {
+            for (let j = 0; j < y.length; ++j) {
+                result[i + j] += x[i] * y[j];
+            }
+        }
+        return result;
+    };
+
+    // Standard normal using Box-Muller transform
+    function randomNormal(mean=0, stdev=1) {
+        const u = 1 - Math.random(); // Converting [0,1) to (0,1]
+        const v = Math.random();
+        const z = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        return z * stdev + mean; // Transform to the desired mean and standard deviation
     }
 
     // Plots provided data arrays in given figure (div)
-    function plotMultiple(figure, xs, ys) {
+    // Each element of xs, ys is an array of values
+    // opts: mode="line", "scatter", "stem", width, height, opacity, title
+    function plotFigure(figure, xs, ys, opts=null) {
         if (xs.length != ys.length) {
-            throw Error("Number of X and Y data are not same length");
-            for (let i = 0; i < xs.length; ++i) {
-                if (xs[i].length != ys[i].length) {
-                    throw Error("X and Y data are not same length");
+            throw new Error("Number of X and Y data are not same length");
+        }
+        for (let i = 0; i < xs.length; ++i) {
+            if (xs[i].length != ys[i].length) {
+                throw new Error("X and Y data are not same length");
+            }
+
+            // Check elements are numbers
+            for (const val of xs[i]) {
+                if (typeof val != "number") {
+                    throw new Error("Invalid X vector");
+                }
+            }
+            for (const val of ys[i]) {
+                if (typeof val != "number") {
+                    throw new Error("Invalid Y vector");
                 }
             }
         }
 
-        const width = 400;
-        const height = 200;
-        const margin = 5;
+        const mode = (opts && opts.mode) ? opts.mode : "line";
+        if (mode != "line" && mode != "scatter" && mode != "stem") {
+            throw new Error("Invalid mode");
+        }
+
+        const width = (opts && opts.width) ? opts.width : 400;
+        const height = (opts && opts.height) ? opts.height : 200;
+        const opacity = (opts && opts.opacity) ? opts.opacity : 1;
+        const margin = 10;
 
         const svg = d3.create("svg")
             .attr("width", width)
@@ -279,154 +574,522 @@
             .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
 
         // X axis through y=0
-        const yMin = Math.min(d3.min(ys, (y) => d3.min(y)), 0); // Clamp to 0 if yMin > 0
-        const yMax = d3.max(ys, (y) => d3.max(y));
+        const xMin = Math.min(d3.min(xs, (x) => d3.min(x)), 0);    // Clamp to 0 if xMin > 0
+        const xMax = Math.max(d3.max(xs, (x) => d3.max(x)), 0.01); // Clamp to avoid divide by 0
+        const yMin = Math.min(d3.min(ys, (y) => d3.min(y)), 0);    // Clamp to 0 if yMin > 0
+        const yMax = Math.max(d3.max(ys, (y) => d3.max(y)), 0.01);
 
         const xAbsMax = d3.max(xs, (x) => d3.max(x, (d) => Math.abs(d)));
-        const xScale = d3.scaleLinear([-xAbsMax, xAbsMax], [margin, width - margin]);
+        const xScale = d3.scaleLinear([xMin, xMax], [margin, width - margin]);
         svg.append("g")
             .attr("transform", `translate(0, ${(height - 2 * margin) * yMax / (yMax - yMin) + margin})`)
             .call(d3.axisTop(xScale));
 
-        // Centered Y axis
+        // Y axis through x=0
         const yAbsMax = d3.max(ys, (y) => d3.max(y, (d) => Math.abs(d)));
         const yScale = d3.scaleLinear([yMin, yMax], [height - margin, margin]);
         svg.append("g")
-            .attr("transform", `translate(${width / 2}, 0)`)
+            .attr("transform", `translate(${(width - 2 * margin) * xMin / (xMin - xMax) + margin}, 0)`)
             .call(d3.axisLeft(yScale));
 
-        // Draw curve
-        for (let i = 0; i < xs.length; ++i) {
-            svg.append("path")
-                .datum(d3.range(0, xs[i].length)) // xs.length == ys.length
-                .attr("fill", "none")
-                .attr("stroke", "black")
-                .attr("stroke-width", 1)
-                .attr("d", d3.line((j) => xScale(xs[i][j]), (j) => yScale(ys[i][j]))
-            );
+        // Plot data
+        if (mode == "line") {
+            for (let i = 0; i < xs.length; ++i) {
+                svg.append("path")
+                    .datum(d3.range(0, xs[i].length)) // xs.length == ys.length
+                    .attr("fill", "none")
+                    .attr("stroke", "black")
+                    .attr("stroke-width", 1)
+                    .attr("stroke-opacity", opacity)
+                    .attr("d", d3.line((j) => xScale(xs[i][j]), (j) => yScale(ys[i][j]))
+                );
+            }
+        }
+        else if (mode == "scatter") {
+            for (let i = 0; i < xs.length; ++i) {
+                for (let j = 0; j < xs[i].length; ++j) {
+                    svg.append("circle")
+                        .attr("cx", xScale(xs[i][j]))
+                        .attr("cy", yScale(ys[i][j]))
+                        .attr("r", 2)
+                        .attr("opacity", opacity);
+                }
+            }
+        }
+        else if (mode == "stem") {
+            svg.append("defs")
+                .append("marker")
+                .attr("id", "arrow-marker")
+                .attr("viewBox", "0 -5 10 10")
+                .attr("refX", 10)
+                .attr("refY", 0)
+                .attr("markerWidth", 6)
+                .attr("markerHeight", 6)
+                .attr("orient", "auto")
+                .append("path")
+                .attr("d", "M0,-5L10,0L0,5")
+                .attr("fill", "#1171BE");
+
+            for (let i = 0; i < xs.length; ++i) {
+                for (let j = 0; j < xs[i].length; ++j) {
+                    // Don't draw if zero length
+                    const yPt1 = yScale(0);
+                    const yPt2 = yScale(ys[i][j]);
+                    if (Math.abs(yPt2 - yPt1) > 0.125) {
+                        const xPt = xScale(xs[i][j]);
+                        svg.append("line")
+                            .attr("x1", xPt)
+                            .attr("y1", yPt1)
+                            .attr("x2", xPt)
+                            .attr("y2", yPt2)
+                            .attr("stroke", "#1171BE")
+                            .attr("stroke-width", 1)
+                            .attr("stroke-opacity", opacity)
+                            .attr("marker-end", "url(#arrow-marker)");
+                    }
+                }
+            }
+        }
+
+        // Title
+        if (opts && opts.title) {
+            svg.append("text")
+                .attr("transform", "translate(20, 20)")
+                .text(opts.title);
         }
 
         figure.innerHTML = ""; // Clear children
         figure.append(svg.node());
     }
 
-    function plotTxPulse(signal) {
-        const x = d3.range(-3, 3, 0.01);
-        y = x.map(x => signal.time(x, 1));
-        plot(document.getElementById("tx-pulse-figure1"), x, y);
+    // Eye diagram
+    // offset  Index in signalY where center of first bit pulse occurs
+    // eyeName Shown on plot
+    function plotEye(figure, eyeName, signalY, offset) {
+        // Range is start to end minus step
+        const x = d3.range(-0.6, 0.6 + simTimeStep, simTimeStep); // 1 UI
 
-        y = x.map(x => signal.freq(x, 1));
-        plot(document.getElementById("tx-pulse-figure2"), x, y);
+        let xs = [];
+        let ys = [];
+        for (let n = 0; n < simSymbols; ++n) {
+            let y = [];
+            for (let t = -0.6; t < (0.6 + simTimeStep); t += simTimeStep) {
+                y.push(signalY[tToIdx(t + n) + offset]);
+            }
+            xs.push(x);
+            ys.push(y);
+        }
+
+        let opts = { title: `Eye: ${eyeName}`, opacity: 0.03 };
+        plotFigure(figure, xs, ys, opts);
     }
 
-    function plotTxEye(signal) {
-        const x = d3.range(-0.5, 0.5, 0.01); // 1 UI
+    // Time/frequency of transfer function
+    function plotTransferFunction(figureTime, figureFreq, tf) {
+        const x = d3.range(-3, 3, simTimeStep);
+        y = x.map(x => tf.evalTime(x));
+        let opts = { title: "Impulse Response" };
+        plotFigure(figureTime, [x], [y], opts);
 
-        // Sum time shifted versions of signal of different signs
-        // n =  -3 -2 -1  0
-        // ------------------
-        // sign -1 -1 -1 +1
-        //      -1 -1 +1 -1
-        //      -1 -1 +1 +1
-        let genPulseTrain = (nStart, nEnd) => {
-            // Sum positive and negative version of current n with previous ys
-            const n = nStart;
-            if (n > nEnd) {
-                return [new Array(x.length).fill(0)];
+        opts = { title: "Frequency Response" };
+        y = x.map(x => tf.evalFreq(x));
+        plotFigure(figureFreq, [x], [y], opts);
+    }
+
+    // Discrete time ADC data to binary data
+    function simDsp(adcSampN, updateFfe=false) {
+        const rxFfeCoeffN = uiRxFfeCoeff;
+        const rxFfePrecursors = uiRxFfePrecursors;
+        const rxFfePostcursors = uiRxFfePostcursors;
+
+        // FFE
+        let rxFfeOutN = convolve(adcSampN, rxFfeCoeffN);
+        rxFfeOutN = rxFfeOutN.slice(rxFfePrecursors, rxFfeOutN.length - rxFfePostcursors); // Data starts after entering main cursor
+
+        // Detect symbols
+        let rxDetN = new Array(simSymbols).fill(0);
+        for (let i = 0; i < simSymbols; ++i) {
+            rxDetN[i] = (rxFfeOutN[i] < 0) ? -1 : 1;
+        }
+
+        // Compute cross-correlations
+        let rxCorrN = new Array(rxFfePrecursors + rxFfePostcursors + 1).fill(0);
+        for (let i = rxFfePostcursors; i < (simSymbols - rxFfePrecursors); ++i) { // Iterate ADC samples
+            for (let j = 0; j < (rxFfePrecursors + rxFfePostcursors + 1); ++j) { // Cursor index
+                // Assume detected value is equal to transmitted value I_k
+                let error = rxDetN[i] - rxFfeOutN[i]; // e_k = I_k - \hat{I_k}
+                rxCorrN[j] += error * rxDetN[i - j + rxFfePrecursors];
             }
+        }
 
-            let ysPos = genPulseTrain(n + 1, nEnd);
-            let ysNeg = [new Array(ysPos.length).fill(0)];
-            for (let i = 0; i < ysPos.length; ++i) { // Copy ysPos by value
-                ysNeg[i] = ysPos[i].slice();
-            }
-
-            let yPos = x.map(x => signal.time(x - n, 1));
-            let yNeg = x.map(x => -1 * signal.time(x - n, 1));
-            for (let i = 0; i < ysPos.length; ++i) {
-                for (let j = 0; j < yPos.length; ++j) {
-                    ysPos[i][j] += yPos[j];
-                    ysNeg[i][j] += yNeg[j];
+        // Zero-forcing FFE update
+        if (rxFfeCoeffN.length != rxCorrN.length) {
+            throw new Error("Incorrect RX FFE size");
+        }
+        let rxFfeNewCoeffN = rxFfeCoeffN.slice();
+        if (updateFfe) {
+            for (let i = 0; i < rxFfeNewCoeffN.length; ++i) {
+                if (i != rxFfePrecursors) {
+                    rxFfeNewCoeffN[i] = rxFfeCoeffN[i] + (2**-8) * Math.sign(rxCorrN[i]);
                 }
             }
-
-            // Merge positive and negative version together
-            let ys = [];
-            for (let i = 0; i < ysPos.length; ++i) {
-                ys.push(ysPos[i]);
-                ys.push(ysNeg[i]);
-            }
-            return ys;
-        };
-
-        let ys = genPulseTrain(-3, 3);
-        let xs = [];
-        for (let i = 0; i < ys.length; ++i) {
-            xs.push(x);
+            uiSetRxffeCoeff(rxFfeNewCoeffN);
         }
-        plotMultiple(document.getElementById("tx-eye"), xs, ys);
+
+        // Decode to binary data
+        let rxDataN = new Array(simSymbols).fill(0);
+        for (let i = 0; i < simSymbols; ++i) {
+            rxDataN[i] = (rxDetN[i] < 0) ? 0 : 1;
+        }
+
+        // Diagrams of results ========================
+
+        plotFigure(
+            document.getElementById("rx-ffe-figure1"),
+            [d3.range(-rxFfePrecursors, rxFfePostcursors + 1)],
+            [rxFfeNewCoeffN],
+            { mode: "stem", title: "Impulse Response" }
+        );
+        plotFigure(
+            document.getElementById("rx-scatter-ffe"),
+            [d3.range(0, rxFfeOutN.length)],
+            [rxFfeOutN],
+            { mode: "scatter", title: "FFE output", opacity: 0.3 }
+        );
+        plotFigure(
+            document.getElementById("rx-ffe-figure2"),
+            [d3.range(-rxFfePrecursors, rxFfePostcursors + 1)],
+            [rxCorrN],
+            { mode: "stem", title: "Cross Correlation" }
+        );
+
+        return rxDataN;
     }
 
-    function plotTx() {
-        const signal = uiTxPulse;
-        plotTxPulse(signal);
-        plotTxEye(signal);
+    // Calculates BER
+    function simBer(txDataN, rxDataN) {
+        let berErrorCount = 0;
+        for (let i = 0; i < txDataN.length; ++i) {
+            if (txDataN[i] != rxDataN[i]) {
+                ++berErrorCount;
+            }
+        }
+        const ber = berErrorCount / simSymbols;
+
+        let berText = document.getElementById("rx-ber");
+        if (ber == 0) {
+            berText.innerText = `< ${1/simSymbols}`; // Minimum BER reportable is 1/total symbols
+        }
+        else {
+            berText.innerText = ber;
+        }
+    }
+
+    // Simulates all components, data stored in global simData
+    function simAll() {
+        const txSignal = uiTxPulse;
+        const channelResponse = uiChannelResponse;
+        const noisePsd = uiNoisePsd;
+        const rxFilter = uiRxFilter;
+
+        const rxFfeCoeffN = uiRxFfeCoeff;
+        const rxFfePrecursors = uiRxFfePrecursors;
+        const rxFfePostcursors = uiRxFfePostcursors;
+        if (txSignal === null || channelResponse === null ||
+            noisePsd === null || uiRxFilter === null) { // On load these are not set
+            return;
+        }
+
+        // Plot transfer functions ========================
+
+        plotTransferFunction(
+            document.getElementById("tx-signal-figure1"),
+            document.getElementById("tx-signal-figure2"),
+            txSignal
+        );
+        plotTransferFunction(
+            document.getElementById("channel-response-figure1"),
+            document.getElementById("channel-response-figure2"),
+            channelResponse
+        );
+        plotTransferFunction(
+            document.getElementById("rx-filter-figure1"),
+            document.getElementById("rx-filter-figure2"),
+            rxFilter
+        );
+
+        // Tx =============================================
+
+        // Generate random data
+        let txDataN = new Array(simSymbols).fill(0);
+        for (let i = 0; i < simSymbols; ++i) {
+            let signalValue = (Math.random() < 0.5) ? 0 : 1;
+            txDataN[i] = signalValue;
+        }
+        simData["txDataN"] = txDataN;
+
+        // // Precode
+        // let txPrecodedVal = new Array(plotSymbols + 1).fill(0);
+        // for (let i = 0; i < plotSymbols; ++i) {
+        //     // P_m = D_m - P_{m-1} mod 2
+        //     txPrecodedVal[i + 1] = txDataVal[i] ^ txPrecodedVal[i]
+        // }
+
+        // Symbols to transmit. Not the same as bits to transmit because of precoding
+        const txSymbolLen = txDataN.length; // txPrecodedVal.length;
+
+        // Encoded binary data to pulses -1 +1
+        let txEncodedVal = new Array(txSymbolLen).fill(0);
+        for (let i = 0; i < txSymbolLen; ++i) {
+            txEncodedVal[i] = txDataN[i] ? 1 : -1;
+            // txEncodedVal[i] = txPrecodedVal[i] ? 1 : -1;
+        }
+
+        // Sum time shifted versions of all the pulses
+        const bitPulseDuration = 3; // Truncate response to: -3 to 3, time units
+
+        let signalT = d3.range(-bitPulseDuration, bitPulseDuration + txSymbolLen, simTimeStep); // Time points
+        let signalY = new Array(signalT.length).fill(0); // Value of signal
+
+        const offsetSignalY = tToIdx(bitPulseDuration); // Index of first bit pulse center
+
+        for (let i = 0; i < txSymbolLen; ++i) {
+            for (let t = -bitPulseDuration; t <= bitPulseDuration; t += simTimeStep) {
+                signalY[tToIdx(t + i) + offsetSignalY] += txEncodedVal[i] * txSignal.evalTime(t);
+            }
+        }
+
+        // Channel ========================================
+
+        const responseT = d3.range(-10, 10 + simTimeStep, simTimeStep);
+
+        // Scale by dt. Convolution is numerical integral, dt is plotTimeStep
+        let channelResponseY = d3.map(responseT, (t) => channelResponse.evalTime(t) * simTimeStep);
+        let channelY = convolve(signalY, channelResponseY);
+
+        const offsetChannelY = offsetSignalY + Math.floor(responseT.length / 2);
+
+        // Inject noise. Variance = Noise PSD
+        let noisyChannelY = d3.map(channelY, (y) => y + randomNormal(0, Math.sqrt(noisePsd)));
+
+        const offsetNoisyChannelY = offsetChannelY;
+
+        // Rx =============================================
+
+        let rxFilterResponseY = d3.map(responseT, (t) => rxFilter.evalTime(t) * simTimeStep);
+        let rxY = convolve(noisyChannelY, rxFilterResponseY);
+
+        const offsetRxY = offsetNoisyChannelY + Math.floor(responseT.length / 2);
+
+        // Sample values for DSP (this models an ADC)
+        let adcSampN = new Array(simSymbols).fill(0);
+        for (let i = 0; i < simSymbols; ++i) {
+            adcSampN[i] = rxY[tToIdx(i) + offsetRxY];
+        }
+        simData["adcSampN"] = adcSampN;
+
+        const rxDataN = simDsp(adcSampN);
+
+        // Compute error rate
+        simBer(txDataN, rxDataN);
+
+        // Diagrams of results ========================
+
+        plotEye(document.getElementById("tx-eye"), "Tx Output", signalY, offsetSignalY);
+        plotEye(document.getElementById("channel-eye"), "Channel Output", channelY, offsetChannelY);
+        plotEye(document.getElementById("channel-eye-noisy"), "Channel Output + Noise", noisyChannelY, offsetNoisyChannelY);
+        plotEye(document.getElementById("rx-eye-filtered"), "Rx Filtered", rxY, offsetRxY);
+
+        plotFigure(
+            document.getElementById("rx-scatter-adc"),
+            [d3.range(0, adcSampN.length)],
+            [adcSampN],
+            { mode: "scatter", title: "ADC output", opacity: 0.3 }
+        );
     }
 
     // UI Logic ===============================================================
 
     let uiTxPulse = null;
+    let uiChannelResponse = null;
+    let uiNoisePsd = null;
+    let uiRxFilter = null;
+    let uiRxFfeCoeff = [];
 
-    function uiTxPulseSelection()  {
-        let txPulseGroupSelect = document.getElementById("tx-pulse-group-select");
-        txPulseGroupSelect.innerHTML = "";
-        txPulseGroupSelect.onchange = () => {
-            // Selected signal group, load the signals
-            const signalGroup = txPulseGroupSelect.value;
+    const uiRxFfePrecursors = 6; // 6 pre, 1 main, 25 post = 32
+    const uiRxFfePostcursors = 25;
+    const uiRxFfeInputs = []; // Input elements for coefficients
 
-            let txPulseSelect = document.getElementById("tx-pulse-select");
-            txPulseSelect.innerHTML = "";
-            txPulseSelect.onchange = () => {
+    // Handles transfer function selection logic
+    function uiTransferFunctionSelection(opts, onTfChange = (tf) => {})  {
+        const transferFunctions = opts.transferFunctions; // One of the config constants
+        const tfGroupSelect = opts.tfGroupSelect; // HTML select element for group
+        const tfSelect = opts.tfSelect;           // HTML select element for function
+        const paramDiv = opts.paramDiv;           // HTML div element for parameters
+        const timeText = opts.timeText;           // HTML div element for text
+        const freqText = opts.freqText;           // HTML div element for text
+
+        tfGroupSelect.innerHTML = "";
+        tfGroupSelect.onchange = () => {
+            // Selected group, load the transfer functions
+            const group = tfGroupSelect.value;
+
+            tfSelect.innerHTML = "";
+            tfSelect.size = transferFunctions[group].length;
+            tfSelect.onchange = () => {
                 // Selected signal in group, load details
-                const signal = txSignals[signalGroup][txPulseSelect.selectedIndex];
-                uiTxPulse = signal;
+                const tf = transferFunctions[group][tfSelect.selectedIndex];
+                onTfChange(tf);
 
-                document.getElementById("tx-pulse-time").innerText = signal.timeLatex;
-                document.getElementById("tx-pulse-freq").innerText = signal.freqLatex;
+                timeText.innerText = tf.timeLatex;
+                freqText.innerText = tf.freqLatex;
 
                 // Create options
-                let optionDiv = document.getElementById("tx-pulse-option");
-                optionDiv.innerHTML = "";
-                optionDiv.append(...signal.createOptions());
-                signal.onOptionChanged = plotTx;
+                let paramElements = tf.uiCreateParameters(() => simAll());
+                paramDiv.innerHTML = "";
+                paramDiv.append(...paramElements);
 
                 MathJax.typeset();
-                plotTx();
+                simAll();
             }
 
-            for (const signal of txSignals[signalGroup]) {
+            for (const tf of transferFunctions[group]) {
                 let newOption = document.createElement("option");
-                newOption.innerText = signal.name;
-                txPulseSelect.append(newOption)
+                newOption.innerText = tf.name;
+                tfSelect.append(newOption)
             }
 
-            txPulseSelect.selectedIndex = 0;
-            txPulseSelect.onchange();
+            tfSelect.selectedIndex = 0;
+            tfSelect.onchange();
         }
 
-        for (const signalGroup of Object.keys(txSignals)) {
+        for (const group of Object.keys(transferFunctions)) {
             let newGroupOption = document.createElement("option");
-            newGroupOption.innerText = signalGroup;
-            txPulseGroupSelect.append(newGroupOption);
+            newGroupOption.innerText = group;
+            tfGroupSelect.append(newGroupOption);
         }
 
-        txPulseGroupSelect.selectedIndex = 0;
-        txPulseGroupSelect.onchange();
+        tfGroupSelect.selectedIndex = 0;
+        tfGroupSelect.onchange(); // Trigger initial selection
+    }
+
+    // Sets inputs for all the coefficients
+    function uiSetRxffeCoeff(coeff) {
+        for (let i = 0; i < (uiRxFfePrecursors + uiRxFfePostcursors + 1); ++i) {
+            let input = uiRxFfeInputs[i];
+
+            let newValue = coeff[i];
+            if (newValue < Number(input.min)) {
+                input.value = input.min;
+            }
+            else if (newValue > Number(input.max)) {
+                input.value = input.max;
+            }
+            else {
+                input.value = newValue;
+            }
+
+            uiRxFfeCoeff[i] = Number(input.value);
+        }
+    }
+
+    // Fills in HTML elements
+    function uiSetup() {
+        // Create FFE coefficient inputs
+        let rxFfeCoeffDiv = document.getElementById("rx-ffe-coeffs");
+        for (let i = -uiRxFfePrecursors; i <= uiRxFfePostcursors; ++i) {
+            let label = document.createElement("label");
+            label.innerText = `$C_{${i}}$`;
+
+            let input = document.createElement("input");
+            input.type = "number";
+            input.min = -1;
+            input.max = 1;
+            input.step = 0.015625;
+            input.value = (i == 0) ? 1 : 0;
+            input.onchange = () => {
+                if (Number(input.value) < Number(input.min)) {
+                    input.value = input.min;
+                }
+                else if (Number(input.value) > Number(input.max)) {
+                    input.value = input.max;
+                }
+
+                uiRxFfeCoeff[i + uiRxFfePrecursors] = Number(input.value);
+                simAll();
+            };
+
+            uiRxFfeCoeff.push(Number(input.value));
+            uiRxFfeInputs.push(input);
+
+            let parentDiv = document.createElement("div");
+            parentDiv.classList.add("input-div");
+            parentDiv.append(label);
+            parentDiv.append(input);
+
+            rxFfeCoeffDiv.append(parentDiv);
+        }
+
+        document.getElementById("rx-ffe-reset-button").onclick = () => {
+            let newCoeff = new Array(uiRxFfeCoeff.length).fill(0);
+            newCoeff[uiRxFfePrecursors] = 1; // C0 = 1
+            uiSetRxffeCoeff(newCoeff);
+
+            simAll();
+        };
+
+        document.getElementById("run-dsp-button").onclick = () => {
+            for (let i = 0; i < 15; ++i) {
+                simDsp(simData["adcSampN"], true); // Update the FFE
+            }
+
+            const rxDataN = simDsp(simData["adcSampN"], false); // Compute results with new FFE coefficients
+            simBer(simData["txDataN"], rxDataN);
+        };
     }
 
     window.addEventListener("load", () => {
-        uiTxPulseSelection();
+        // Tx
+        const txSignalOpts = {
+            transferFunctions: cfgTxSignals,
+            tfGroupSelect: document.getElementById("tx-signal-group-select"),
+            tfSelect: document.getElementById("tx-signal-select"),
+            paramDiv: document.getElementById("tx-signal-param"),
+            timeText: document.getElementById("tx-signal-time"),
+            freqText: document.getElementById("tx-signal-freq")
+        };
+        uiTransferFunctionSelection(txSignalOpts, (tf) => uiTxPulse = tf);
+
+        // Channel
+        const channelResponseOpts = {
+            transferFunctions: cfgChannelResponses,
+            tfGroupSelect: document.getElementById("channel-response-group-select"),
+            tfSelect: document.getElementById("channel-response-select"),
+            paramDiv: document.getElementById("channel-response-param"),
+            timeText: document.getElementById("channel-response-time"),
+            freqText: document.getElementById("channel-response-freq")
+        };
+        uiTransferFunctionSelection(channelResponseOpts, (tf) => uiChannelResponse = tf);
+
+        const awgnValue = document.getElementById("awgn-value");
+        awgnValue.onchange = () => {
+            uiNoisePsd = Number(awgnValue.value);
+            simAll();
+        };
+        uiNoisePsd = Number(awgnValue.value); // Load initial value
+
+        // Rx
+        const rxFilterOpts = {
+            transferFunctions: cfgRxFilters,
+            tfGroupSelect: document.getElementById("rx-filter-group-select"),
+            tfSelect: document.getElementById("rx-filter-select"),
+            paramDiv: document.getElementById("rx-filter-param"),
+            timeText: document.getElementById("rx-filter-time"),
+            freqText: document.getElementById("rx-filter-freq")
+        };
+        uiTransferFunctionSelection(rxFilterOpts, (tf) => uiRxFilter = tf);
     });
+    uiSetup();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js" integrity="sha512-vc58qvvBdrDR4etbxMdlTt4GBQk1qjvyORR2nrsPsFPyrs+/u5c3+1Ct6upOgdZoIl7eq6k3a1UPDSNAQi/32A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/4.0.0/tex-svg.min.js" integrity="sha512-JBvT4lHnIhbktDR7xvJbyObGFZU3uNkwiN7ubopyb4RkUDOHQuZpS/8izmKsJG3k+Mvj11FMyeRWrjgxEJ6K4Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
