@@ -13,13 +13,36 @@
         <h2><span>Tx</span></h2>
         <div>
             <div class="section-status">
+                <div id="tx-scatter-encoder" class="section-detail"></div>
+                <div id="tx-scatter-ffe" class="section-detail"></div>
                 <div id="tx-eye" class="section-detail"></div>
             </div>
-            <!-- <h3>Encoder</h3> -->
-            <!-- <h3>FFE</h3> -->
-            <!-- <div>
-                TBD
-            </div> -->
+            <h3>Encoder</h3>
+            <div class="section-left">
+                <div class="subsection-left">
+                    Binary 0/1 $\rightarrow$ DAC $\mp1$
+                </div>
+            </div>
+            <h3>FFE</h3>
+            <div class="section">
+                <div class="section-left">
+                    <div class="subsection-left">
+                        <div class="input-div">
+                            <button id="tx-ffe-reset-button" type="button">Reset</button>
+                        </div>
+                    </div>
+                    <div id="tx-ffe-coeffs" class="subsection-right">
+                    </div>
+                </div>
+                <div class="section-center">
+                    <div id="tx-ffe-figure1"></div>
+                    <div id="tx-ffe-figure2"></div>
+                </div>
+                <div class="section-right">
+                    <div id="tx-ffe-figure3"></div>
+                    <div id="tx-ffe-figure4"></div>
+                </div>
+            </div>
             <h3>Signal</h3>
             <div class="section">
                 <div class="section-left">
@@ -109,6 +132,16 @@
                 </div>
             </div>
             <h3>ADC</h3>
+            <div class="section">
+                <div class="subsection-left">
+                </div>
+                <div class="subsection-right">
+                    <div class="input-div">
+                        <label>Clock Jitter</label>
+                        <input id="rx-jitter-value" type="number" min="0" max="1" step="0.01" value="0.01">
+                    </div>
+                </div>
+            </div>
             <h3>FFE</h3>
             <div class="section">
                 <div class="section-left">
@@ -119,11 +152,23 @@
                         </div>
                     </div>
                     <div id="rx-ffe-coeffs" class="subsection-right">
+                        <div class="input-div">
+                            <label>DLEV0</label>
+                            <input id="dlev-0" type="number" min="-2" max="2" step="0.0625" value="-1">
+                        </div>
+                        <div class="input-div">
+                            <label>DLEV1</label>
+                            <input id="dlev-1" type="number" min="-2" max="2" step="0.0625" value="1">
+                        </div>
                     </div>
                 </div>
                 <div class="section-center">
                     <div id="rx-ffe-figure1"></div>
                     <div id="rx-ffe-figure2"></div>
+                </div>
+                <div class="section-right">
+                    <div id="rx-ffe-figure3"></div>
+                    <div id="rx-ffe-figure4"></div>
                 </div>
             </div>
             <!-- <h3>MLSD</h3>
@@ -132,6 +177,8 @@
             </div> -->
         </div>
 
+        <div id="screen-bottom">
+        </div>
     </main>
 </body>
 <style type="text/css" media="screen">
@@ -142,7 +189,7 @@
         margin: auto;
         width: 1200px;
         max-width: calc(100% - 2rem);
-        font-size: 10pt;
+        font-size: 11pt;
         line-height: 1.6;
     }
 
@@ -173,7 +220,7 @@
         margin-bottom: 0;
     }
     .MathJax {
-        font-size: 12pt;
+        font-size: 11pt;
     }
 
     /* Sections */
@@ -226,6 +273,12 @@
         justify-content: center;
     }
 
+    #screen-bottom {
+        background-color: white;
+        bottom: 0;
+        position: fixed;
+        width: 100%;
+    }
     #rx-ffe-coeffs {
         height: 400px;
         overflow-y: scroll;
@@ -495,10 +548,164 @@
     const simSymbols = 2048;
     const simData = [];
 
+    const Block = { // Order of each part in the communication system
+        all             : 0,
+        txGenerator     : 1,
+        txEncoder       : 2,
+        txFfe           : 3,
+        txSignal        : 4,
+        channelResponse : 10,
+        channelNoise    : 11,
+        rxFilter        : 20,
+        rxAdc           : 21,
+        rxFfe           : 22,
+    };
+
+    class AnalogWaveform {
+        constructor(points, offset) {
+            this.points = points; // Array
+            this.offset = offset; // Index in points where first bit occurs
+        }
+    };
+
     function tToIdx(t) {
         return Math.round(t / simTimeStep);
     }
 
+    // Generic FFT function
+    let fftReorderCache = [];
+    function fftInternal(re, im, opts) {
+        const inverse = (opts && opts.inverse) ? opts.inverse : false;
+
+        // https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm
+
+        const n = re.length;
+        const nLog = Math.log2(n);
+        if (re.length != im.length) {
+            throw new Error("Input lengths are not equal");
+        }
+        if (Math.floor(nLog) != nLog) {
+            throw new Error("Length must be power of 2");
+        }
+
+        // Bit reversal
+        let reverse = (val) => {
+            let result = 0;
+            for (let j = 0; j < nLog; ++j) {
+                result |= val & 1;
+                result <<= 1;
+                val >>= 1;
+            }
+            result >>= 1; // Final iteration shifts one extra
+            return result;
+        };
+
+        // Reorder data
+        // The FFT algorithm below expects first half to be data from even indices
+        // and second half data from odd indices.
+        //
+        // For 8 point FFT, it uses 4 point FFT results with data in the order below
+        // where the subscript is the index of the input data
+        //   x0 x2 x4 x6 x1 x3 x5 x7   // Index of data in original input
+        //   ----------- -----------
+        //   0  1  2  3  0  1  2  3    // Index of data to 4 point FFT
+        // For each 4 point FFT, it too expects first half to be data from even indices
+        // and the second half to data from odd indices
+        //   x0 x4 x2 x6   x1 x5 x3 x7 // Index of data in original input
+        //   ----- -----   ----- -----
+        // This generalizes to data in larger powers of 2 by reversing bit indices
+        if (fftReorderCache.length != n) {
+            // Cache invalid
+            fftReorderCache = new Array(n).fill(0);
+            for (let i = 0; i < n; i++) {
+                let revI = reverse(i);
+                if (revI > i) { // Avoid swapping twice by only swapping with further elements in array
+                    revI = i;
+                }
+                fftReorderCache[i] = revI;
+
+                let tempr = re[i];
+                re[i] = re[revI];
+                re[revI] = tempr;
+
+                let tempi = im[i];
+                im[i] = im[revI];
+                im[revI] = tempi;
+            }
+        }
+        else {
+            // Cache valid
+            for (let i = 0; i < n; i++) {
+                let revI = fftReorderCache[i];
+
+                let tempr = re[i];
+                re[i] = re[revI];
+                re[revI] = tempr;
+
+                let tempi = im[i];
+                im[i] = im[revI];
+                im[revI] = tempi;
+            }
+
+        }
+
+        const angleSign = inverse ? 2 : -2;
+        for (let size = 2; size <= n; size <<= 1) {
+            const halfSize = size >> 1;
+
+            const angle = angleSign * Math.PI / size; // Complex exponential
+            const wpr = Math.cos(angle); // \Re[\omega_p]
+            const wpi = Math.sin(angle); // \Im[\omega_p]
+
+            for (let i = 0; i < n; i += size) {
+                let wr = 1.0; // \Re[\omega]
+                let wi = 0.0; // \Im[\omega]
+
+                for (let j = 0; j < halfSize; ++j) {
+                    const idx1 = i + j;           // First half
+                    const idx2 = idx1 + halfSize; // Second half
+
+                    // Complex multiply
+                    const tr = wr * re[idx2] - wi * im[idx2];
+                    const ti = wr * im[idx2] + wi * re[idx2];
+
+                    // let ur = re[idx1];
+                    // let ui = im[idx1];
+                    // re[idx1] = ur + tr
+                    // im[idx1] = ui + ti
+                    // re[idx2] = ur - tr
+                    // im[idx2] = ui - ti
+                    re[idx2] = re[idx1] - tr;
+                    im[idx2] = im[idx1] - ti;
+                    re[idx1] += tr;
+                    im[idx1] += ti;
+
+                    // Complex multiply
+                    const wrOld = wr;
+                    wr = wrOld * wpr - wi * wpi;
+                    wi = wi * wpr + wrOld * wpi;
+                }
+            }
+        }
+
+        // Normalize
+        if (inverse) {
+            for (let i = 0; i < n; i++) {
+                re[i] /= n;
+                im[i] /= n;
+            }
+        }
+    }
+
+    function fft(re, im) {
+        fftInternal(re, im, {inverse: false});
+    }
+
+    function ifft(re, im) {
+        fftInternal(re, im, {inverse: true});
+    }
+
+    // FFT convolve
     function convolve(x, y) {
         if (x.length == 0 || y.length == 0) {
             throw new Error("Empty vectors");
@@ -515,13 +722,42 @@
             }
         }
 
-        const result = new Array(x.length + y.length - 1).fill(0);
+        // FFT Convolve
+        // Next power of 2
+        const size = 2 ** Math.ceil(Math.log2(x.length + y.length - 1));
+
+        const xr = new Array(size).fill(0);
+        const xi = new Array(size).fill(0);
         for (let i = 0; i < x.length; ++i) {
-            for (let j = 0; j < y.length; ++j) {
-                result[i + j] += x[i] * y[j];
-            }
+            xr[i] = x[i];
         }
-        return result;
+        fft(xr, xi);
+
+        const yr = new Array(size).fill(0);
+        const yi = new Array(size).fill(0);
+        for (let i = 0; i < y.length; ++i) {
+            yr[i] = y[i];
+        }
+        fft(yr, yi);
+
+        // Multiply frequencies
+        let resultr = new Array(size).fill(0);
+        let resulti = new Array(size).fill(0);
+        for (let i = 0; i < size; ++i) {
+            resultr[i] = xr[i] * yr[i] - xi[i] * yi[i];
+            resulti[i] = xr[i] * yi[i] + xi[i] * yr[i];
+        }
+        ifft(resultr, resulti);
+        return resultr.slice(0, x.length + y.length - 1);
+
+        // // Time-domain convolution
+        // const result = new Array(x.length + y.length - 1).fill(0);
+        // for (let i = 0; i < x.length; ++i) {
+        //     for (let j = 0; j < y.length; ++j) {
+        //         result[i + j] += x[i] * y[j];
+        //     }
+        // }
+        // return result;
     };
 
     // Standard normal using Box-Muller transform
@@ -581,16 +817,20 @@
 
         const xAbsMax = d3.max(xs, (x) => d3.max(x, (d) => Math.abs(d)));
         const xScale = d3.scaleLinear([xMin, xMax], [margin, width - margin]);
+        const xScaleTranslateY = (height - 2 * margin) * yMax / (yMax - yMin) + margin;
         svg.append("g")
-            .attr("transform", `translate(0, ${(height - 2 * margin) * yMax / (yMax - yMin) + margin})`)
-            .call(d3.axisTop(xScale));
+            .attr("transform", `translate(0, ${xScaleTranslateY})`)
+            .call((xScaleTranslateY > (height - 3 * margin)) ? d3.axisTop(xScale) : d3.axisBottom(xScale));
+            // If too close to the bottom put axis ticks on top
 
         // Y axis through x=0
         const yAbsMax = d3.max(ys, (y) => d3.max(y, (d) => Math.abs(d)));
         const yScale = d3.scaleLinear([yMin, yMax], [height - margin, margin]);
+        const yScaleTranslateX = (width - 2 * margin) * xMin / (xMin - xMax) + margin;
         svg.append("g")
-            .attr("transform", `translate(${(width - 2 * margin) * xMin / (xMin - xMax) + margin}, 0)`)
-            .call(d3.axisLeft(yScale));
+            .attr("transform", `translate(${yScaleTranslateX}, 0)`)
+            .call((yScaleTranslateX > (3 * margin)) ? d3.axisLeft(yScale) : d3.axisRight(yScale));
+            // If too close to the bottom put axis ticks on the right
 
         // Plot data
         if (mode == "line") {
@@ -663,9 +903,8 @@
     }
 
     // Eye diagram
-    // offset  Index in signalY where center of first bit pulse occurs
-    // eyeName Shown on plot
-    function plotEye(figure, eyeName, signalY, offset) {
+    // signal AnalogWaveform
+    function plotEye(figure, eyeName, signal) {
         // Range is start to end minus step
         const x = d3.range(-0.6, 0.6 + simTimeStep, simTimeStep); // 1 UI
 
@@ -674,7 +913,7 @@
         for (let n = 0; n < simSymbols; ++n) {
             let y = [];
             for (let t = -0.6; t < (0.6 + simTimeStep); t += simTimeStep) {
-                y.push(signalY[tToIdx(t + n) + offset]);
+                y.push(signal.points[tToIdx(t + n) + signal.offset]);
             }
             xs.push(x);
             ys.push(y);
@@ -696,8 +935,152 @@
         plotFigure(figureFreq, [x], [y], opts);
     }
 
+
+    // Generates data to transmit
+    function simTxGenerator() {
+        // Generate random data
+        let txDataN = new Array(simSymbols).fill(0);
+        for (let i = 0; i < simSymbols; ++i) {
+            let signalValue = (Math.random() < 0.5) ? 0 : 1;
+            txDataN[i] = signalValue;
+        }
+        return txDataN;
+    }
+
+    // Encodes data to DAC codes +1 / -1
+    function simTxEncoder(txDataN) {
+        // // Precode
+        // let txPrecodedVal = new Array(plotSymbols + 1).fill(0);
+        // for (let i = 0; i < plotSymbols; ++i) {
+        //     // P_m = D_m - P_{m-1} mod 2
+        //     txPrecodedVal[i + 1] = txDataVal[i] ^ txPrecodedVal[i]
+        // }
+
+        // Symbols to transmit. Not the same as bits to transmit because of precoding
+        const txSymbolLen = txDataN.length; // txPrecodedVal.length;
+
+        // Encoded binary data to pulses -1 +1
+        let txEncodedN = new Array(txSymbolLen).fill(0);
+        for (let i = 0; i < txSymbolLen; ++i) {
+            txEncodedN[i] = txDataN[i] ? 1 : -1;
+            // txEncodedVal[i] = txPrecodedVal[i] ? 1 : -1;
+        }
+
+        plotFigure(
+            document.getElementById("tx-scatter-encoder"),
+            [d3.range(0, txEncodedN.length)],
+            [txEncodedN],
+            { mode: "scatter", title: "Encoder output", opacity: 0.3 }
+        );
+        return txEncodedN;
+    }
+
+    function simTxFfe(txEncodedN) {
+        const txFfeCoeffN = uiTxFfeCoeff;
+        const txFfePrecursors = uiTxFfePrecursors;
+        const txFfePostcursors = uiTxFfePostcursors;
+
+        let txFfeOutN = convolve(txEncodedN, txFfeCoeffN);
+        txFfeOutN = txFfeOutN.slice(txFfePrecursors, txFfeOutN.length - txFfePostcursors); // Data starts after entering main cursor
+
+        plotFigure(
+            document.getElementById("tx-ffe-figure1"),
+            [d3.range(-txFfePrecursors, txFfePostcursors + 1)],
+            [txFfeCoeffN],
+            { mode: "stem", title: "Impulse Response" }
+        );
+        plotFigure(
+            document.getElementById("tx-scatter-ffe"),
+            [d3.range(0, txFfeOutN.length)],
+            [txFfeOutN],
+            { mode: "scatter", title: "FFE output", opacity: 0.3 }
+        );
+        return txFfeOutN;
+    }
+
+    // Generates DAC output waveform
+    function simTxSignal(txFfeOutN, txSignal) {
+        // Sum time shifted versions of all the pulses
+        const bitPulseDuration = 3; // Truncate response to: -3 to 3, time units
+        const offsetSignalY = tToIdx(bitPulseDuration); // Index of first bit pulse center
+
+        // First and last bit extends by pulse duration
+        const size = Math.floor((2 * bitPulseDuration + txFfeOutN.length - 1) / simTimeStep) + 1;
+        let pointsTxSignalY = new Array(size).fill(0);
+        for (let i = 0; i < txFfeOutN.length; ++i) {
+            for (let t = -bitPulseDuration; t <= bitPulseDuration; t += simTimeStep) {
+                pointsTxSignalY[tToIdx(t + i) + offsetSignalY] += txFfeOutN[i] * txSignal.evalTime(t);
+            }
+        }
+
+        let txSignalY = new AnalogWaveform(pointsTxSignalY, offsetSignalY);
+        plotEye(document.getElementById("tx-eye"), "Tx Output", txSignalY);
+        return txSignalY;
+    }
+
+    // Channel effects on transmitted waveform
+    function simChannelResponse(txSignalY, channelResponse) {
+        // Compute channel response
+        const responseT = d3.range(-10, 10 + simTimeStep, simTimeStep);
+        // Scale by dt. Convolution is numerical integral, dt is plotTimeStep
+        let channelResponseY = d3.map(responseT, (t) => channelResponse.evalTime(t) * simTimeStep);
+
+        // Apply response on tx signal
+        let pointsChannelY = convolve(txSignalY.points, channelResponseY);
+        const offsetChannelY = txSignalY.offset + Math.floor(responseT.length / 2);
+
+        let channelY = new AnalogWaveform(pointsChannelY, offsetChannelY);
+        plotEye(document.getElementById("channel-eye"), "Channel Output", channelY);
+        return channelY;
+    }
+
+    // Injects noise to each channel value
+    function simChannelNoise(channelY, noisePsd) {
+        // Inject noise. Variance = Noise PSD
+        const noiseStdev = Math.sqrt(noisePsd);
+        let pointsNoisyChannelY = d3.map(channelY.points, (y) => y + randomNormal(0, noiseStdev));
+
+        const offsetNoisyChannelY = channelY.offset;
+
+        let noisyChannelY = new AnalogWaveform(pointsNoisyChannelY, offsetNoisyChannelY);
+        plotEye(document.getElementById("channel-eye-noisy"), "Channel Output + Noise", noisyChannelY);
+        return noisyChannelY;
+    }
+
+    // Filters Rx input signal
+    function simRxFilter(noisyChannelY, rxFilter) {
+        // Calculate filter response
+        const responseT = d3.range(-10, 10 + simTimeStep, simTimeStep);
+        let rxFilterResponseY = d3.map(responseT, (t) => rxFilter.evalTime(t) * simTimeStep);
+
+        let pointsRxY = convolve(noisyChannelY.points, rxFilterResponseY);
+        const offsetRxY = noisyChannelY.offset + Math.floor(responseT.length / 2);
+
+        let rxY = new AnalogWaveform(pointsRxY, offsetRxY);
+        plotEye(document.getElementById("rx-eye-filtered"), "Rx Filtered", rxY);
+        return rxY;
+    }
+
+    // Rx ADC output
+    function simRxAdc(rxY, jitter) {
+        // Sample values for DSP (this models an ADC)
+        let adcSampN = new Array(simSymbols).fill(0);
+        for (let i = 0; i < simSymbols; ++i) {
+            adcSampN[i] = rxY.points[tToIdx(i + randomNormal(0, jitter)) + rxY.offset];
+        }
+
+        plotFigure(
+            document.getElementById("rx-scatter-adc"),
+            [d3.range(0, adcSampN.length)],
+            [adcSampN],
+            { mode: "scatter", title: "ADC output", opacity: 0.3 }
+        );
+        return adcSampN;
+    }
+
     // Discrete time ADC data to binary data
-    function simDsp(adcSampN, updateFfe=false) {
+    function simDsp(adcSampN, updateDsp=false) {
+        const dlevN = uiRxDlev;
         const rxFfeCoeffN = uiRxFfeCoeff;
         const rxFfePrecursors = uiRxFfePrecursors;
         const rxFfePostcursors = uiRxFfePostcursors;
@@ -712,14 +1095,28 @@
             rxDetN[i] = (rxFfeOutN[i] < 0) ? -1 : 1;
         }
 
-        // Compute cross-correlations
+        // Compute cross-correlations and level offsets
+        let dlevOffsetN = [0, 0];
         let rxCorrN = new Array(rxFfePrecursors + rxFfePostcursors + 1).fill(0);
         for (let i = rxFfePostcursors; i < (simSymbols - rxFfePrecursors); ++i) { // Iterate ADC samples
             for (let j = 0; j < (rxFfePrecursors + rxFfePostcursors + 1); ++j) { // Cursor index
+                let symbolIdx = (rxDetN[i] + 1) / 2; // Map symbol to 0, 1, ... and accumulate sign
+
                 // Assume detected value is equal to transmitted value I_k
-                let error = rxDetN[i] - rxFfeOutN[i]; // e_k = I_k - \hat{I_k}
+                let error = dlevN[symbolIdx] - rxFfeOutN[i]; // e_k = I_k - \hat{I_k}
+
+                dlevOffsetN[symbolIdx] -= Math.sign(error);
                 rxCorrN[j] += error * rxDetN[i - j + rxFfePrecursors];
             }
+        }
+
+        // Dlev update
+        if (updateDsp) {
+            let newDlevN = dlevN.slice();
+            for (let i = 0; i < dlevN.length; ++i) {
+                newDlevN[i] = dlevN[i] + (2**-4) * Math.sign(dlevOffsetN[i]);
+            }
+            uiSetDlev(newDlevN);
         }
 
         // Zero-forcing FFE update
@@ -727,7 +1124,7 @@
             throw new Error("Incorrect RX FFE size");
         }
         let rxFfeNewCoeffN = rxFfeCoeffN.slice();
-        if (updateFfe) {
+        if (updateDsp) {
             for (let i = 0; i < rxFfeNewCoeffN.length; ++i) {
                 if (i != rxFfePrecursors) {
                     rxFfeNewCoeffN[i] = rxFfeCoeffN[i] + (2**-8) * Math.sign(rxCorrN[i]);
@@ -757,10 +1154,16 @@
             { mode: "scatter", title: "FFE output", opacity: 0.3 }
         );
         plotFigure(
-            document.getElementById("rx-ffe-figure2"),
+            document.getElementById("rx-ffe-figure3"),
             [d3.range(-rxFfePrecursors, rxFfePostcursors + 1)],
             [rxCorrN],
             { mode: "stem", title: "Cross Correlation" }
+        );
+        plotFigure(
+            document.getElementById("rx-ffe-figure4"),
+            [[-1, 1]],
+            [dlevOffsetN],
+            { mode: "stem", title: "Level offset" }
         );
 
         return rxDataN;
@@ -786,139 +1189,99 @@
     }
 
     // Simulates all components, data stored in global simData
-    function simAll() {
+    function simSystem(block) {
         const txSignal = uiTxPulse;
         const channelResponse = uiChannelResponse;
         const noisePsd = uiNoisePsd;
         const rxFilter = uiRxFilter;
-
-        const rxFfeCoeffN = uiRxFfeCoeff;
-        const rxFfePrecursors = uiRxFfePrecursors;
-        const rxFfePostcursors = uiRxFfePostcursors;
-        if (txSignal === null || channelResponse === null ||
-            noisePsd === null || uiRxFilter === null) { // On load these are not set
+        const rxJitter = uiRxJitter;
+        if (uiInitDone === false) { // On load these are not set
             return;
         }
 
-        // Plot transfer functions ========================
-
-        plotTransferFunction(
-            document.getElementById("tx-signal-figure1"),
-            document.getElementById("tx-signal-figure2"),
-            txSignal
-        );
-        plotTransferFunction(
-            document.getElementById("channel-response-figure1"),
-            document.getElementById("channel-response-figure2"),
-            channelResponse
-        );
-        plotTransferFunction(
-            document.getElementById("rx-filter-figure1"),
-            document.getElementById("rx-filter-figure2"),
-            rxFilter
-        );
-
         // Tx =============================================
 
-        // Generate random data
-        let txDataN = new Array(simSymbols).fill(0);
-        for (let i = 0; i < simSymbols; ++i) {
-            let signalValue = (Math.random() < 0.5) ? 0 : 1;
-            txDataN[i] = signalValue;
+        if (block <= Block.txGenerator) {
+            simData["txDataN"] = simTxGenerator();
         }
-        simData["txDataN"] = txDataN;
-
-        // // Precode
-        // let txPrecodedVal = new Array(plotSymbols + 1).fill(0);
-        // for (let i = 0; i < plotSymbols; ++i) {
-        //     // P_m = D_m - P_{m-1} mod 2
-        //     txPrecodedVal[i + 1] = txDataVal[i] ^ txPrecodedVal[i]
-        // }
-
-        // Symbols to transmit. Not the same as bits to transmit because of precoding
-        const txSymbolLen = txDataN.length; // txPrecodedVal.length;
-
-        // Encoded binary data to pulses -1 +1
-        let txEncodedVal = new Array(txSymbolLen).fill(0);
-        for (let i = 0; i < txSymbolLen; ++i) {
-            txEncodedVal[i] = txDataN[i] ? 1 : -1;
-            // txEncodedVal[i] = txPrecodedVal[i] ? 1 : -1;
+        if (block <= Block.txEncoder) {
+            simData["txEncodedN"] = simTxEncoder(simData["txDataN"]);
         }
-
-        // Sum time shifted versions of all the pulses
-        const bitPulseDuration = 3; // Truncate response to: -3 to 3, time units
-
-        let signalT = d3.range(-bitPulseDuration, bitPulseDuration + txSymbolLen, simTimeStep); // Time points
-        let signalY = new Array(signalT.length).fill(0); // Value of signal
-
-        const offsetSignalY = tToIdx(bitPulseDuration); // Index of first bit pulse center
-
-        for (let i = 0; i < txSymbolLen; ++i) {
-            for (let t = -bitPulseDuration; t <= bitPulseDuration; t += simTimeStep) {
-                signalY[tToIdx(t + i) + offsetSignalY] += txEncodedVal[i] * txSignal.evalTime(t);
-            }
+        if (block <= Block.txFfe) {
+            simData["txFfeOutN"] = simTxFfe(simData["txEncodedN"]);
+        }
+        if (block <= Block.txSignal) {
+            simData["txSignalY"] = simTxSignal(simData["txFfeOutN"], txSignal);
+            plotTransferFunction(
+                document.getElementById("tx-signal-figure1"),
+                document.getElementById("tx-signal-figure2"),
+                txSignal
+            );
         }
 
         // Channel ========================================
 
-        const responseT = d3.range(-10, 10 + simTimeStep, simTimeStep);
-
-        // Scale by dt. Convolution is numerical integral, dt is plotTimeStep
-        let channelResponseY = d3.map(responseT, (t) => channelResponse.evalTime(t) * simTimeStep);
-        let channelY = convolve(signalY, channelResponseY);
-
-        const offsetChannelY = offsetSignalY + Math.floor(responseT.length / 2);
-
-        // Inject noise. Variance = Noise PSD
-        let noisyChannelY = d3.map(channelY, (y) => y + randomNormal(0, Math.sqrt(noisePsd)));
-
-        const offsetNoisyChannelY = offsetChannelY;
+        if (block <= Block.channelResponse) {
+            simData["channelY"] = simChannelResponse(simData["txSignalY"], channelResponse);
+            plotTransferFunction(
+                document.getElementById("channel-response-figure1"),
+                document.getElementById("channel-response-figure2"),
+                channelResponse
+            );
+        }
+        if (block <= Block.channelNoise) {
+            simData["noisyChannelY"] = simChannelNoise(simData["channelY"], noisePsd);
+        }
 
         // Rx =============================================
 
-        let rxFilterResponseY = d3.map(responseT, (t) => rxFilter.evalTime(t) * simTimeStep);
-        let rxY = convolve(noisyChannelY, rxFilterResponseY);
-
-        const offsetRxY = offsetNoisyChannelY + Math.floor(responseT.length / 2);
-
-        // Sample values for DSP (this models an ADC)
-        let adcSampN = new Array(simSymbols).fill(0);
-        for (let i = 0; i < simSymbols; ++i) {
-            adcSampN[i] = rxY[tToIdx(i) + offsetRxY];
+        if (block <= Block.rxFilter) {
+            simData["rxY"] = simRxFilter(simData["noisyChannelY"], rxFilter);
+            plotTransferFunction(
+                document.getElementById("rx-filter-figure1"),
+                document.getElementById("rx-filter-figure2"),
+                rxFilter
+            );
         }
-        simData["adcSampN"] = adcSampN;
+        if (block <= Block.rxAdc) {
+            simData["adcSampN"] = simRxAdc(simData["rxY"], rxJitter);
+        }
+        if (block <= Block.rxFfe) {
+            simData["rxDataN"] = simDsp(simData["adcSampN"]);
 
-        const rxDataN = simDsp(adcSampN);
-
-        // Compute error rate
-        simBer(txDataN, rxDataN);
-
-        // Diagrams of results ========================
-
-        plotEye(document.getElementById("tx-eye"), "Tx Output", signalY, offsetSignalY);
-        plotEye(document.getElementById("channel-eye"), "Channel Output", channelY, offsetChannelY);
-        plotEye(document.getElementById("channel-eye-noisy"), "Channel Output + Noise", noisyChannelY, offsetNoisyChannelY);
-        plotEye(document.getElementById("rx-eye-filtered"), "Rx Filtered", rxY, offsetRxY);
-
-        plotFigure(
-            document.getElementById("rx-scatter-adc"),
-            [d3.range(0, adcSampN.length)],
-            [adcSampN],
-            { mode: "scatter", title: "ADC output", opacity: 0.3 }
-        );
+            // Compute error rate
+            simBer(simData["txDataN"], simData["rxDataN"]);
+        }
     }
 
     // UI Logic ===============================================================
 
     let uiTxPulse = null;
     let uiChannelResponse = null;
-    let uiNoisePsd = null;
+    let uiNoisePsd = 0;
     let uiRxFilter = null;
-    let uiRxFfeCoeff = [];
+    let uiRxJitter = 0;
 
+    let uiTxFfeCoeff = [];
+    let uiRxDlev = [];
+    let uiRxFfeCoeff = [];
+    let uiInitDone = false;
+
+    const uiTxFfePrecursors = 4; // 4 pre, 1 main, 2 post = 7
+    const uiTxFfePostcursors = 2;
     const uiRxFfePrecursors = 6; // 6 pre, 1 main, 25 post = 32
     const uiRxFfePostcursors = 25;
-    const uiRxFfeInputs = []; // Input elements for coefficients
+    const uiTxFfeInputs = []; // Input elements for coefficients
+    const uiRxFfeInputs = [];
+
+    function uiClampInput(input) {
+        if (Number(input.value) < Number(input.min)) {
+            input.value = input.min;
+        }
+        else if (Number(input.value) > Number(input.max)) {
+            input.value = input.max;
+        }
+    };
 
     // Handles transfer function selection logic
     function uiTransferFunctionSelection(opts, onTfChange = (tf) => {})  {
@@ -928,6 +1291,7 @@
         const paramDiv = opts.paramDiv;           // HTML div element for parameters
         const timeText = opts.timeText;           // HTML div element for text
         const freqText = opts.freqText;           // HTML div element for text
+        const block = opts.block;
 
         tfGroupSelect.innerHTML = "";
         tfGroupSelect.onchange = () => {
@@ -945,12 +1309,12 @@
                 freqText.innerText = tf.freqLatex;
 
                 // Create options
-                let paramElements = tf.uiCreateParameters(() => simAll());
+                let paramElements = tf.uiCreateParameters(() => simSystem(block));
                 paramDiv.innerHTML = "";
                 paramDiv.append(...paramElements);
 
                 MathJax.typeset();
-                simAll();
+                simSystem(block);
             }
 
             for (const tf of transferFunctions[group]) {
@@ -974,20 +1338,35 @@
     }
 
     // Sets inputs for all the coefficients
-    function uiSetRxffeCoeff(coeff) {
+    function uiSetTxffeCoeff(coeffN) {
+        for (let i = 0; i < (uiTxFfePrecursors + uiTxFfePostcursors + 1); ++i) {
+            let input = uiTxFfeInputs[i];
+            input.value = coeffN[i];
+            uiClampInput(input);
+
+            uiTxFfeCoeff[i] = Number(input.value);
+        }
+    }
+
+    // Sets inputs for all the dlevs
+    function uiSetDlev(dlevN) {
+        let dlev0 = document.getElementById("dlev-0");
+        dlev0.value = dlevN[0];
+        uiClampInput(dlev0);
+        uiRxDlev[0] = Number(dlev0.value);
+
+        let dlev1 = document.getElementById("dlev-1");
+        dlev1.value = dlevN[1];
+        uiClampInput(dlev1);
+        uiRxDlev[1] = Number(dlev1.value);
+    }
+
+    // Sets inputs for all the coefficients
+    function uiSetRxffeCoeff(coeffN) {
         for (let i = 0; i < (uiRxFfePrecursors + uiRxFfePostcursors + 1); ++i) {
             let input = uiRxFfeInputs[i];
-
-            let newValue = coeff[i];
-            if (newValue < Number(input.min)) {
-                input.value = input.min;
-            }
-            else if (newValue > Number(input.max)) {
-                input.value = input.max;
-            }
-            else {
-                input.value = newValue;
-            }
+            input.value = coeffN[i];
+            uiClampInput(input);
 
             uiRxFfeCoeff[i] = Number(input.value);
         }
@@ -995,51 +1374,97 @@
 
     // Fills in HTML elements
     function uiSetup() {
-        // Create FFE coefficient inputs
-        let rxFfeCoeffDiv = document.getElementById("rx-ffe-coeffs");
-        for (let i = -uiRxFfePrecursors; i <= uiRxFfePostcursors; ++i) {
-            let label = document.createElement("label");
-            label.innerText = `$C_{${i}}$`;
-
-            let input = document.createElement("input");
-            input.type = "number";
-            input.min = -1;
-            input.max = 1;
-            input.step = 0.015625;
-            input.value = (i == 0) ? 1 : 0;
-            input.onchange = () => {
-                if (Number(input.value) < Number(input.min)) {
-                    input.value = input.min;
-                }
-                else if (Number(input.value) > Number(input.max)) {
-                    input.value = input.max;
-                }
-
-                uiRxFfeCoeff[i + uiRxFfePrecursors] = Number(input.value);
-                simAll();
-            };
-
-            uiRxFfeCoeff.push(Number(input.value));
-            uiRxFfeInputs.push(input);
-
-            let parentDiv = document.createElement("div");
-            parentDiv.classList.add("input-div");
-            parentDiv.append(label);
-            parentDiv.append(input);
-
-            rxFfeCoeffDiv.append(parentDiv);
+        // Create DLEV inputs
+        let dlev0 = document.getElementById("dlev-0");
+        dlev0.onchange = () => {
+            uiClampInput(dlev0);
+            uiRxDlev[0] = Number(dlev0.value);
+            simSystem(Block.rxFfe);
+        }
+        let dlev1 = document.getElementById("dlev-1");
+        dlev1.onchange = () => {
+            uiClampInput(dlev1);
+            uiRxDlev[1] = Number(dlev1.value);
+            simSystem(Block.rxFfe);
         }
 
-        document.getElementById("rx-ffe-reset-button").onclick = () => {
-            let newCoeff = new Array(uiRxFfeCoeff.length).fill(0);
+
+        // Create FFE coefficient inputs
+        let createFfeCoeffInputs = (opts) => {
+            const block = opts.block;
+            const inputDiv = opts.inputDiv; // HTML container
+            const inputs = opts.inputs;          // HTML input elements
+            const coeff = opts.coeff;            // Array holding coeff values
+            const precursors = opts.precursors;  // Number pre/post
+            const postcursors = opts.postcursors;
+
+            for (let i = -precursors; i <= postcursors; ++i) {
+                let label = document.createElement("label");
+                label.innerText = `$C_{${i}}$`;
+
+                let input = document.createElement("input");
+                input.type = "number";
+                input.min = -1;
+                input.max = 1;
+                input.step = 0.015625;
+                input.value = (i == 0) ? 1 : 0;
+                input.onchange = () => {
+                    uiClampInput(input);
+                    coeff[i + precursors] = Number(input.value);
+                    simSystem(block);
+                };
+
+                inputs.push(input);
+
+                let parentDiv = document.createElement("div");
+                parentDiv.classList.add("input-div");
+                parentDiv.append(label);
+                parentDiv.append(input);
+
+                inputDiv.append(parentDiv);
+            }
+        };
+        createFfeCoeffInputs({
+            block:       Block.txFfe,
+            inputDiv:    document.getElementById("tx-ffe-coeffs"),
+            inputs:      uiTxFfeInputs,
+            coeff:       uiTxFfeCoeff,
+            precursors:  uiTxFfePrecursors,
+            postcursors: uiTxFfePostcursors
+        });
+        createFfeCoeffInputs({
+            block:       Block.rxFfe,
+            inputDiv:    document.getElementById("rx-ffe-coeffs"),
+            inputs:      uiRxFfeInputs,
+            coeff:       uiRxFfeCoeff,
+            precursors:  uiRxFfePrecursors,
+            postcursors: uiRxFfePostcursors
+        });
+
+        let txFfeResetButton = document.getElementById("tx-ffe-reset-button");
+        txFfeResetButton.onclick = () => {
+            let newCoeff = new Array(uiTxFfePrecursors + uiTxFfePostcursors + 1).fill(0);
+            newCoeff[uiTxFfePrecursors] = 1; // C0 = 1
+            uiSetTxffeCoeff(newCoeff);
+
+            simSystem(Block.txFfe);
+        };
+        txFfeResetButton.click(); // Load initial values
+
+        let dspResetButton = document.getElementById("rx-ffe-reset-button");
+        dspResetButton.onclick = () => {
+            uiSetDlev([-1, 1]);
+
+            let newCoeff = new Array(uiRxFfePrecursors + uiRxFfePostcursors + 1).fill(0);
             newCoeff[uiRxFfePrecursors] = 1; // C0 = 1
             uiSetRxffeCoeff(newCoeff);
 
-            simAll();
+            simSystem(Block.rxFfe);
         };
+        dspResetButton.click(); // Load initial values
 
         document.getElementById("run-dsp-button").onclick = () => {
-            for (let i = 0; i < 15; ++i) {
+            for (let i = 0; i < 7; ++i) {
                 simDsp(simData["adcSampN"], true); // Update the FFE
             }
 
@@ -1051,6 +1476,7 @@
     window.addEventListener("load", () => {
         // Tx
         const txSignalOpts = {
+            block : Block.txSignal,
             transferFunctions: cfgTxSignals,
             tfGroupSelect: document.getElementById("tx-signal-group-select"),
             tfSelect: document.getElementById("tx-signal-select"),
@@ -1062,6 +1488,7 @@
 
         // Channel
         const channelResponseOpts = {
+            block: Block.channelResponse,
             transferFunctions: cfgChannelResponses,
             tfGroupSelect: document.getElementById("channel-response-group-select"),
             tfSelect: document.getElementById("channel-response-select"),
@@ -1073,13 +1500,15 @@
 
         const awgnValue = document.getElementById("awgn-value");
         awgnValue.onchange = () => {
+            uiClampInput(awgnValue);
             uiNoisePsd = Number(awgnValue.value);
-            simAll();
+            simSystem(Block.channelNoise);
         };
         uiNoisePsd = Number(awgnValue.value); // Load initial value
 
         // Rx
         const rxFilterOpts = {
+            block: Block.rxFilter,
             transferFunctions: cfgRxFilters,
             tfGroupSelect: document.getElementById("rx-filter-group-select"),
             tfSelect: document.getElementById("rx-filter-select"),
@@ -1088,6 +1517,17 @@
             freqText: document.getElementById("rx-filter-freq")
         };
         uiTransferFunctionSelection(rxFilterOpts, (tf) => uiRxFilter = tf);
+
+        const rxJitter = document.getElementById("rx-jitter-value");
+        rxJitter.onchange = () => {
+            uiClampInput(rxJitter);
+            uiRxJitter = Number(rxJitter.value);
+            simSystem(Block.rxAdc);
+        };
+        uiRxJitter = Number(rxJitter.value); // Load initial value
+
+        uiInitDone = true;
+        simSystem(Block.all); // Simulate the whole system
     });
     uiSetup();
 </script>
