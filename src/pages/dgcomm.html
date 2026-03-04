@@ -177,7 +177,7 @@
             </div> -->
         </div>
 
-        <div id="screen-bottom">
+        <div id="screen-bottom">Simulator running...
         </div>
     </main>
 </body>
@@ -274,10 +274,13 @@
     }
 
     #screen-bottom {
-        background-color: white;
-        bottom: 0;
+        left: 0;
+        top: 0;
         position: fixed;
         width: 100%;
+        display: none; /* Hide by default */
+        background-color: white;
+        outline: red 1px solid;
     }
     #rx-ffe-coeffs {
         height: 400px;
@@ -1163,7 +1166,7 @@
             document.getElementById("rx-ffe-figure4"),
             [[-1, 1]],
             [dlevOffsetN],
-            { mode: "stem", title: "Level offset" }
+            { mode: "stem", title: "Level Offset" }
         );
 
         return rxDataN;
@@ -1189,7 +1192,7 @@
     }
 
     // Simulates all components, data stored in global simData
-    function simSystem(block) {
+    function simBlocks(block) {
         const txSignal = uiTxPulse;
         const channelResponse = uiChannelResponse;
         const noisePsd = uiNoisePsd;
@@ -1252,6 +1255,16 @@
             // Compute error rate
             simBer(simData["txDataN"], simData["rxDataN"]);
         }
+    }
+
+    function simSystem(block) {
+        document.getElementById("screen-bottom").style.display = "block";
+
+        // Hack to show loading text
+        setTimeout(() => {
+            simBlocks(block);
+            document.getElementById("screen-bottom").style.display = "none";
+        }, 20); // Give browser 20 ms to draw, then start the simulator
     }
 
     // UI Logic ===============================================================
