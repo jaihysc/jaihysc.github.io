@@ -808,13 +808,11 @@
             </g>
         </svg>
 
-        <h2><span id="setting-title">Details</span></h2>
+        <!--Hide the title line at startup-->
+        <h2 id="setting-title-line" style="visibility: hidden;"><span id="setting-title"></span></h2>
         <div>
             <div class="figure-container" id="setting-figure"></div>
             <div class="section" id="setting-section">
-                <div class="input-div">
-                    <label>Click on a block above to show its details</label>
-                </div>
             </div>
         </div>
 
@@ -822,6 +820,8 @@
         <div id="help-body" style="visibility: visible;">
             <p>This is the high level block diagram for a communications system. Data is generated externally and passed to the transmitter (Tx), which sends the data across some medium (Channel) to be received at the receiver (Rx). The received data is compared against the sent data for bit errors.</p>
             <p>Click one of the blocks to show its output waveform and settings.</p>
+        </div>
+        <div id="help-plot-body" style="visibility: visible;">
         </div>
     </main>
 </body>
@@ -923,6 +923,7 @@
     /* Input with figure on the right */
     .input-div-group {
         width: 600px;
+        margin-bottom: auto; /* Pack rows together */
     }
 
     .input-div label {
@@ -938,6 +939,10 @@
         margin-bottom: 2px;
     }
 
+    .input-div input[type="checkbox"] {
+        width: auto;
+    }
+
     /* input-select-div is an input and button side by side */
     .input-select-div select {
         width: 300px;
@@ -951,115 +956,6 @@
         width: 30px;
     }
 </style>
-<script>
-    // // Rx ADC output
-    // function simRxAdc(rxY, jitter) {
-    //     // Sample values for DSP (this models an ADC)
-    //     let adcSampN = new Array(simSymbols).fill(0);
-    //     for (let i = 0; i < simSymbols; ++i) {
-    //         adcSampN[i] = rxY.points[tToIdx(i + randomNormal(0, jitter)) + rxY.offset];
-    //     }
-
-    //     plotFigure(
-    //         document.getElementById("rx-scatter-adc"),
-    //         [d3.range(0, adcSampN.length)],
-    //         [adcSampN],
-    //         { mode: "scatter", title: "ADC output", opacity: 0.3 }
-    //     );
-    //     return adcSampN;
-    // }
-
-    // // Discrete time ADC data to binary data
-    // function simDsp(adcSampN, updateDsp = false) {
-    //     const dlevN = uiRxDlev;
-    //     const rxFfeCoeffN = uiRxFfeCoeff;
-    //     const rxFfePrecursors = uiRxFfePrecursors;
-    //     const rxFfePostcursors = uiRxFfePostcursors;
-
-    //     // FFE
-    //     let rxFfeOutN = convolve(adcSampN, rxFfeCoeffN);
-    //     rxFfeOutN = rxFfeOutN.slice(rxFfePrecursors, rxFfeOutN.length - rxFfePostcursors); // Data starts after entering main cursor
-
-    //     // Detect symbols
-    //     let rxDetN = new Array(simSymbols).fill(0);
-    //     for (let i = 0; i < simSymbols; ++i) {
-    //         rxDetN[i] = (rxFfeOutN[i] < 0) ? -1 : 1;
-    //     }
-
-    //     // Compute cross-correlations and level offsets
-    //     let dlevOffsetN = [0, 0];
-    //     let rxCorrN = new Array(rxFfePrecursors + rxFfePostcursors + 1).fill(0);
-    //     for (let i = rxFfePostcursors; i < (simSymbols - rxFfePrecursors); ++i) { // Iterate ADC samples
-    //         for (let j = 0; j < (rxFfePrecursors + rxFfePostcursors + 1); ++j) { // Cursor index
-    //             let symbolIdx = (rxDetN[i] + 1) / 2; // Map symbol to 0, 1, ... and accumulate sign
-
-    //             // Assume detected value is equal to transmitted value I_k
-    //             let error = dlevN[symbolIdx] - rxFfeOutN[i]; // e_k = I_k - \hat{I_k}
-
-    //             dlevOffsetN[symbolIdx] -= Math.sign(error);
-    //             rxCorrN[j] += error * rxDetN[i - j + rxFfePrecursors];
-    //         }
-    //     }
-
-    //     // Dlev update
-    //     if (updateDsp) {
-    //         let newDlevN = dlevN.slice();
-    //         for (let i = 0; i < dlevN.length; ++i) {
-    //             newDlevN[i] = dlevN[i] + (2 ** -4) * Math.sign(dlevOffsetN[i]);
-    //         }
-    //         uiSetDlev(newDlevN);
-    //     }
-
-    //     // Zero-forcing FFE update
-    //     if (rxFfeCoeffN.length != rxCorrN.length) {
-    //         throw new Error("Incorrect RX FFE size");
-    //     }
-    //     let rxFfeNewCoeffN = rxFfeCoeffN.slice();
-    //     if (updateDsp) {
-    //         for (let i = 0; i < rxFfeNewCoeffN.length; ++i) {
-    //             if (i != rxFfePrecursors) {
-    //                 rxFfeNewCoeffN[i] = rxFfeCoeffN[i] + (2 ** -8) * Math.sign(rxCorrN[i]);
-    //             }
-    //         }
-    //         uiSetRxffeCoeff(rxFfeNewCoeffN);
-    //     }
-
-    //     // Decode to binary data
-    //     let rxDataN = new Array(simSymbols).fill(0);
-    //     for (let i = 0; i < simSymbols; ++i) {
-    //         rxDataN[i] = (rxDetN[i] < 0) ? 0 : 1;
-    //     }
-
-    //     // Diagrams of results ========================
-
-    //     plotFigure(
-    //         document.getElementById("rx-ffe-figure1"),
-    //         [d3.range(-rxFfePrecursors, rxFfePostcursors + 1)],
-    //         [rxFfeNewCoeffN],
-    //         { mode: "stem", title: "Impulse Response" }
-    //     );
-    //     plotFigure(
-    //         document.getElementById("rx-scatter-ffe"),
-    //         [d3.range(0, rxFfeOutN.length)],
-    //         [rxFfeOutN],
-    //         { mode: "scatter", title: "FFE output", opacity: 0.3 }
-    //     );
-    //     plotFigure(
-    //         document.getElementById("rx-ffe-figure3"),
-    //         [d3.range(-rxFfePrecursors, rxFfePostcursors + 1)],
-    //         [rxCorrN],
-    //         { mode: "stem", title: "Cross Correlation" }
-    //     );
-    //     plotFigure(
-    //         document.getElementById("rx-ffe-figure4"),
-    //         [[-1, 1]],
-    //         [dlevOffsetN],
-    //         { mode: "stem", title: "Level Offset" }
-    //     );
-
-    //     return rxDataN;
-    // }
-</script>
 <script id="js-shared-math"> // Shared between simulator and UI
     function sinc(x) { // sin(pi * x) / (pi * x)
         return (Math.abs(x) < 1e-4) ? 1 : (Math.sin(Math.PI * x) / (Math.PI * x))
@@ -1096,19 +992,54 @@
 
     // Generic FFT function
     let fftReorderCache = [];
-    function fftInternal(re, im, opts) {
+    // opts: inverse, shift, scale
+    //       shift uses fftshift, ifftshift
+    //       scale can be "none",
+    //                    "amplitude" (Acos(t) has amplitude A/2 in each peak)
+    //                    "2Xamplitude" (Acos(t) has amplitude A in each peak),
+    //                    or a number
+    function fft(inRe, inIm, opts) {
         const inverse = (opts && opts.inverse) ? opts.inverse : false;
+        const shift = (opts && opts.shift) ? opts.shift : false;
+        const scale = (opts && opts.scale) ? opts.scale : false;
 
-        // https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm
-
-        const n = re.length;
-        const nLog = Math.log2(n);
-        if (re.length != im.length) {
+        const inN = inRe.length;
+        const inNLog = Math.log2(inN);
+        if (inRe.length != inIm.length) {
             throw new Error("Input lengths are not equal");
         }
-        if (Math.floor(nLog) != nLog) {
-            throw new Error("Length must be power of 2");
+
+        // Zero pad to power of 2 length
+        const paddedRe = new Array(2 ** Math.ceil(inNLog)).fill(0)
+        const paddedIm = new Array(2 ** Math.ceil(inNLog)).fill(0)
+        if (shift) {
+            const ifftshift = (out, a) => {
+                const mid = Math.floor(a.length / 2)
+                for (let i = 0; i < mid; ++i) {
+                    out[i] = a[mid + i]
+                    out[out.length - mid + i] = a[i]
+                }
+                // Handle the middle point for odd inputs
+                if (a.length % 2 != 0) {
+                    out[mid] = a[a.length - 1]
+                }
+            }
+            ifftshift(paddedRe, inRe)
+            ifftshift(paddedIm, inIm)
         }
+        else {
+            for (let i = 0; i < inN; ++i) {
+                paddedRe[i] = inRe[i]
+                paddedIm[i] = inIm[i]
+            }
+        }
+
+        const n = paddedRe.length;
+        const nLog = Math.log2(n);
+        re = paddedRe
+        im = paddedIm
+
+        // https://en.wikipedia.org/wiki/Cooley%E2%80%93Tukey_FFT_algorithm
 
         // Bit reversal
         let reverse = (val) => {
@@ -1210,53 +1141,81 @@
             }
         }
 
-        // Normalize
-        if (inverse) {
-            for (let i = 0; i < n; i++) {
-                re[i] /= n;
-                im[i] /= n;
+        // Remove points to match input size
+        if (shift) {
+            const fftshift = (out, a) => {
+                const outMid = Math.floor(out.length / 2)
+                for (let i = 0; i < outMid; ++i) {
+                    out[outMid - 1 - i] = a[a.length - 1 - i]
+                    out[outMid + i] = a[i]
+                }
+                if (out.length % 2 != 0) {
+                    out[out.length - 1] = a[outMid]
+                }
+            }
+            if (!inverse) {
+                // FFT can't drop samples or else frequencies are wrong
+                // Resize the input array to size n
+                for (let i = 0; i < n; ++i) {
+                    inRe[i] = 0
+                    inIm[i] = 0
+                }
+            }
+            fftshift(inRe, re)
+            fftshift(inIm, im)
+        }
+        else {
+            // Drop the samples for IFFT in the middle of the output
+            if (!inverse) {
+                // FFT can't drop samples or else frequencies are wrong
+                // Resize the input array to size n
+                for (let i = 0; i < n; ++i) {
+                    inRe[i] = re[i]
+                    inIm[i] = im[i]
+                }
+            }
+            else {
+                const outMid = Math.floor(inN / 2)
+                for (let i = 0; i < outMid; ++i) {
+                    inRe[i] = re[i]
+                    inRe[inN - 1 - i] = re[n - 1 - i]
+
+                    inIm[i] = im[i]
+                    inIm[inN - 1 - i] = im[n - 1 - i]
+                }
+                if (inN % 2 != 0) { // Handle middle point
+                    inRe[outMid] = re[outMid]
+                    inIm[outMid] = im[outMid]
+                }
             }
         }
-    }
 
-    function fft(re, im) {
-        fftInternal(re, im, { inverse: false });
-    }
-
-    function ifft(re, im) {
-        fftInternal(re, im, { inverse: true });
-    }
-
-    // ifftshift and pad with zeros to match output size
-    function ifftshift(out, a) {
-        const mid = Math.floor(a.length / 2)
-        for (let i = 0; i < mid; ++i) {
-            out[i] = a[mid + i]
-            out[out.length - mid + i] = a[i]
+        // Scale as desired
+        let factor = 1
+        if (scale == "amplitude") {
+            // Perserve amplitude of each frequency
+            factor = inverse ? n : (1 / n)
         }
-        // Handle the middle point for odd inputs
-        if (a.length % 2 != 0) {
-            out[mid] = a[a.length - 1]
+        else if (scale == "2Xamplitude") {
+            // Perserve amplitude of each frequency
+            factor = inverse ? (n / 2) : (2 / n)
+        }
+        else if (typeof(scale) == "number") {
+            // Custom factor
+            factor = scale
+        }
+        else if (scale != undefined && scale != null) {
+            console.warn("Unknown FFT scale")
+        }
+
+        for (let i = 0; i < inN; ++i) {
+            inRe[i] *= factor
+            inIm[i] *= factor
         }
     }
 
     // fftshift and scales by length of input, removes points to match output size
-    function fftshiftN(out, a) {
-        const outMid = Math.floor(out.length / 2)
-        for (let i = 0; i < outMid; ++i) {
-            out[outMid - 1 - i] = a[a.length - 1 - i]
-            out[outMid + i] = a[i]
-        }
-        if (out.length % 2 != 0) {
-            out[out.length - 1] = a[outMid]
-        }
-
-        // Scale by N to perserve amplitude
-        const scale = Math.sqrt(a.length)
-        for (let i = 0; i < out.length; ++i) {
-            out[i] *= scale
-        }
-    }
+    // output stored in out (Cannot be same array as a)
 
     // FFT convolve
     function convolve(x, y) {
@@ -1364,12 +1323,22 @@
     let settingModified = false // Marked to request synchronization between threads
 
     // Plots for the block figures
-    // create: Called when plot first created to create elements
-    // show:   Draws HTML UI for the settings
+    // show:     Creates HTML UI for waveform / HTML UI for the settings
+    // showHelp: Sets help text for this plot
+    // update:   Updates plotted waveform
+
+    // Definition of 1 UI (Unit Interval not User Interface)
+    // Timesteps for a UI starts at the previous UI, and ends 1 before the next UI
+    //  [       )
+    //  <-------> 1 UI
+    // -1   0   1
+    //
+    // Time and FFT plots are in units of UI and 1/UI
 
     // Plots provided data arrays in given figure (div)
     // Each element of xs, ys is an array of values
-    // opts: mode="line", "scatter", "stem", width, height, opacity, title
+    // opts: mode="line", "scatter", "stem", width, height, opacity, title,
+    //       xMin, xMax, yMin, yMax
     function plotFigure(figure, xs, ys, opts = null) {
         if (xs.length != ys.length) {
             throw new Error("Number of X and Y data are not same length");
@@ -1408,10 +1377,23 @@
             .attr("viewBox", [0, 0, width, height])
             .attr("style", "max-width: 100%; height: auto; height: intrinsic;");
 
-        const xMin = d3.min(xs, (x) => d3.min(x))
-        const xMax = d3.max(xs, (x) => d3.max(x))
-        const yMin = d3.min(ys, (y) => d3.min(y))
-        const yMax = d3.max(ys, (y) => d3.max(y))
+        const xMin = (opts && opts.xMin != undefined) ? opts.xMin : d3.min(xs, (x) => d3.min(x))
+        const xMax = (opts && opts.xMax != undefined) ? opts.xMax : d3.max(xs, (x) => d3.max(x))
+        let yMin = (opts && opts.yMin != undefined) ? opts.yMin : d3.min(ys, (y) => d3.min(y))
+        let yMax = (opts && opts.yMax != undefined) ? opts.yMax : d3.max(ys, (y) => d3.max(y))
+
+        // Account for y=0 for root of steam in axis range calculation
+        if (mode == "stem") {
+            if (yMin > 0) {
+                yMin = 0
+            }
+            if (yMax < 0) {
+                yMax = 0
+            }
+        }
+
+        const xTickFilter = (opts && opts.xTickFilter) ? opts.xTickFilter : () => true;
+        const yTickFilter = (opts && opts.yTickFilter) ? opts.yTickFilter : () => true;
 
         // X axis through y=0 or closest to it
         let xAxisY = 0
@@ -1427,10 +1409,12 @@
         if (yMax != yMin) {
             xScaleTranslateY = (height - 2 * margin) / (yMax - yMin) * (yMax - xAxisY) + margin;
         }
+        // If too close to the bottom put axis ticks on top
+        const xAxis = (xScaleTranslateY > (height - 3 * margin)) ? d3.axisTop(xScale) : d3.axisBottom(xScale)
+        xAxis.tickValues(xScale.ticks().filter(xTickFilter))
         svg.append("g")
             .attr("transform", `translate(0, ${xScaleTranslateY})`)
-            .call((xScaleTranslateY > (height - 3 * margin)) ? d3.axisTop(xScale) : d3.axisBottom(xScale));
-        // If too close to the bottom put axis ticks on top
+            .call(xAxis);
 
         // Y axis through x=0 or closest to it
         let yAxisX = 0
@@ -1446,10 +1430,12 @@
         if (xMax != xMin) {
             yScaleTranslateX = (width - 2 * margin) / (xMax - xMin) * (yAxisX - xMin) + margin;
         }
+        // If too close to the bottom put axis ticks on the right
+        const yAxis = (yScaleTranslateX > (3 * margin)) ? d3.axisLeft(yScale) : d3.axisRight(yScale)
+        yAxis.tickValues(yScale.ticks().filter(yTickFilter))
         svg.append("g")
             .attr("transform", `translate(${yScaleTranslateX}, 0)`)
-            .call((yScaleTranslateX > (3 * margin)) ? d3.axisLeft(yScale) : d3.axisRight(yScale));
-        // If too close to the bottom put axis ticks on the right
+            .call(yAxis);
 
         // Plot data
         if (mode == "line") {
@@ -1513,7 +1499,7 @@
         // Title
         if (opts && opts.title) {
             svg.append("text")
-                .attr("transform", "translate(20, 20)")
+                .attr("transform", `translate(50, ${height - margin})`)
                 .text(opts.title);
         }
 
@@ -1521,30 +1507,48 @@
         figure.append(svg.node());
     }
 
+    // Sets the help text for plots
+    // msg can be string or list of strings
+    function setPlotHelp(msg) {
+        let body = document.getElementById("help-plot-body")
+        body.innerHTML = ""
+        if (typeof(msg) == "string") {
+            msg = [msg]
+        }
+        for (const paragraph of msg) {
+            const p = document.createElement("p")
+            p.innerText = paragraph
+            body.appendChild(p)
+        }
+    }
+
     class CtPlot { // Plots continuous waveform
         constructor(name) {
             this.name = name
         }
 
-        create(figureDiv) {
+        show(figureDiv) {
             this.figureDiv = figureDiv
         }
 
-        show(waveforms, blkIdx) {
+        showHelp() {
+            setPlotHelp([])
+        }
+
+        update(waveforms, blkIdx) {
             const waveform = waveforms[blkIdx]
             const timeAxis = blocks[SIMULATOR].wfmTimeVector()
 
             // Decimate to speed up waveform update
-            const xShortened = new Array()
-            const yShortened = new Array()
-
             const maxPoints = 1000
             const decimation = Math.round(waveform.length / maxPoints)
-            for (let i = 0; i < waveform.length; ++i) {
-                if (i % decimation == 0) {
-                    xShortened.push(timeAxis[i])
-                    yShortened.push(waveform[i])
-                }
+
+            const length = Math.floor(waveform.length / decimation)
+            const xShortened = new Array(length)
+            const yShortened = new Array(length)
+            for (let i = 0; i < length; ++i) {
+                xShortened[i] = timeAxis[i * decimation]
+                yShortened[i] = waveform[i * decimation]
             }
 
             plotFigure(this.figureDiv, [xShortened], [yShortened])
@@ -1557,11 +1561,15 @@
             this.clock = clock
         }
 
-        create(figureDiv) {
+        show(figureDiv) {
             this.figureDiv = figureDiv
         }
 
-        show(waveforms, blkIdx) {
+        showHelp() {
+            setPlotHelp("The discrete time plot shows the samples processed digitally on each clock edge.")
+        }
+
+        update(waveforms, blkIdx) {
             const waveform = waveforms[blkIdx]
             const timeAxis = blocks[SIMULATOR].wfmTimeVector()
 
@@ -1608,7 +1616,7 @@
             this.canvas = null
         }
 
-        create(figureDiv) {
+        show(figureDiv) {
             // Clear queue since it is no longer up to date
             this.wfmQueue = []
             this.currentUi = 0
@@ -1718,7 +1726,13 @@
             figureDiv.appendChild(controlDiv)
         }
 
-        show(waveforms, blkIdx) {
+        showHelp() {
+            setPlotHelp([
+                "The eye diagram uses either the Tx or Rx clock to plot traces. If the CDR is not locked, the eye will not appear centered."
+            ])
+        }
+
+        update(waveforms, blkIdx) {
             // Called with one (or more) periods of waveform,
             // from posedge of clock to sample before next posedge
             //  ______
@@ -1872,6 +1886,93 @@
         }
     }
 
+    class FftPlot { // Plots FFT of continuous waveform
+        constructor(name) {
+            this.name = name
+            this.prevFreqY = []
+            // Buffer the last few yMin so Y axis does not jump around so much
+            this.yMinHist = new Array(16).fill(0)
+        }
+
+        show(figureDiv) {
+            this.prevFreqY = [] // Clear previous since it is out of date
+            this.figureDiv = figureDiv
+        }
+
+        showHelp() {
+            setPlotHelp("FFT plot axis is in dBV (20 log amplitude each frequency) and 1/UI for frequency.")
+        }
+
+        update(waveforms, blkIdx) {
+            const waveform = waveforms[blkIdx]
+
+            // Decimate to sample rate of 5 [1/UI] to speed up FFT
+            const sampleRate = blocks[SIMULATOR]._uiTimesteps._value
+            const targetSampleRate = 5
+            const decimation = Math.round(sampleRate / targetSampleRate)
+
+            const length = Math.floor(waveform.length / decimation)
+            const yShortened = new Array(length)
+            for (let i = 0; i < length; ++i) {
+                yShortened[i] = waveform[i * decimation]
+            }
+
+            // Take Hanning window
+            for (let i = 0; i < length; ++i) {
+                yShortened[i] *= 0.5 * (1 - Math.cos(2 * Math.PI * i / length))
+            }
+
+            const wfmRe = yShortened
+            const wfmIm = new Array(wfmRe.length).fill(0)
+            fft(wfmRe, wfmIm, {scale: "2Xamplitude"})
+
+            // Take magnitude, only positive frequencies
+            const freqLen = Math.ceil(wfmRe.length / 2)
+            const freqY = new Array(freqLen)
+            for (let i = 0; i < freqLen; ++i) {
+                freqY[i] = Math.sqrt(wfmRe[i] * wfmRe[i] + wfmIm[i] * wfmIm[i])
+            }
+
+            // Average output
+            let newFreqY = freqY.slice()
+
+            const currentNAvg = this.prevFreqY.length + 1
+            for (let i = 0; i < freqY.length; ++i) {
+                let count = freqY[i]
+                for (let j = 0; j < this.prevFreqY.length; ++j) {
+                    count += this.prevFreqY[j][i]
+                }
+                freqY[i] = count / currentNAvg
+            }
+
+            const targetNAvg = 16
+            if (this.prevFreqY.length >= (targetNAvg - 1)) {
+                // Clear oldest once enough history
+                this.prevFreqY.shift()
+            }
+            this.prevFreqY.push(newFreqY)
+
+            // Frequency axis
+            const newSampleRate = length / waveform.length * sampleRate
+            let freqX = range(0, freqLen)
+            freqX = map(freqX, (x) => x * newSampleRate / (2 * freqLen))
+
+            // Take 20 log and plot
+            for (let i = 0; i < freqY.length; ++i) {
+                freqY[i] = 20 * Math.log10(freqY[i])
+            }
+
+            // Buffer the last few yMin so Y axis does not jump around so much
+            this.yMinHist.shift()
+            this.yMinHist.push(d3.min(freqY))
+
+            plotFigure(this.figureDiv, [freqX], [freqY], {
+                title: `${freqLen} point ${currentNAvg} average Hanning`,
+                yMin: d3.min(this.yMinHist)
+            })
+        }
+    }
+
     // Settings for the blocks
     // Members with underscore are serialized to synchronize between threads
     // show: Draws HTML UI for the settings
@@ -1884,6 +1985,8 @@
             this.step = step
             this._value = initial
             this.onchange = () => { }
+
+            this.input = null
         }
 
         serialize() {
@@ -1909,20 +2012,71 @@
             input.step = this.step
             input.value = this._value
             input.onchange = () => {
-                let num = Number(input.value)
-                if (num < this.min) {
-                    num = this.min
-                }
-                else if (num > this.max) {
-                    num = this.max;
-                }
+                this.backSet(Number(input.value))
+                settingModified = true
+                this.onchange()
+            };
+            inputDiv.appendChild(input)
+            this.input = input
 
-                if (num != NaN) {
-                    this._value = num
-                    input.value = num
-                    settingModified = true
-                    this.onchange()
-                }
+            sectionDiv.appendChild(inputDiv)
+        }
+
+        // Sets number without triggering onchange or settingModified
+        // Used for backDeserialize
+        backSet(num) {
+            if (typeof(num) != "number") {
+                throw TypeError("Expected number")
+            }
+
+            if (num < this.min) {
+                num = this.min
+            }
+            else if (num > this.max) {
+                num = this.max;
+            }
+
+            if (num == NaN) {
+                num = 0
+            }
+
+            this._value = num
+            if (this.input) {
+                this.input.value = num
+            }
+        }
+    }
+
+    class EnableSetting {
+        constructor(name, initial = false) {
+            this.name = name
+            this._value = initial
+            this.onchange = () => { }
+        }
+
+        serialize() {
+            return this._value
+        }
+
+        deserialize(stream) {
+            this._value = stream
+        }
+
+        show(sectionDiv) {
+            let inputDiv = document.createElement("div")
+            inputDiv.classList.add("input-div")
+
+            let label = document.createElement("label")
+            label.innerText = this.name
+            inputDiv.appendChild(label)
+
+            let input = document.createElement("input")
+            input.type = "checkbox"
+            input.checked = this._value
+            input.onchange = () => {
+                this._value = input.checked
+                settingModified = true
+                this.onchange()
             };
             inputDiv.appendChild(input)
 
@@ -2060,22 +2214,11 @@
         impulseResponse() {
             const respReal = this.freqResponse()
 
-            const paddedPts = 2 ** Math.ceil(Math.log2(respReal.length))
-            const padReal = new Array(paddedPts).fill(0)
-            ifftshift(padReal, respReal)
+            const respImag = new Array(respReal.length).fill(0)
+            // Need amplitudes to be same as CTFT, thus scale by df, which is 1/impulseUi
+            fft(respReal, respImag, {inverse: true, shift: true, scale: 1 / blocks[SIMULATOR]._impulseUi._value})
+            this.checkFftResult(respReal, respImag)
 
-            const padImag = new Array(paddedPts).fill(0)
-            ifft(padReal, padImag)
-
-            // Time domain impulse should be purely real
-            for (let i = 0; i < padImag.length; ++i) {
-                if (Math.abs(padImag[i]) > 1e-5) {
-                    console.warn("Impulse response has large imaginary component", padImag[i])
-                    break
-                }
-            }
-
-            fftshiftN(respReal, padReal)
             return respReal
         }
 
@@ -2089,6 +2232,24 @@
                 setting.onchange = () => {
                     this.onchange()
                 }
+            }
+        }
+
+        // Time domain impulse should be purely real
+        // Check that max of imaginary component much smaller
+        checkFftResult(respReal, respImag) {
+            let maxReal = respReal[0]
+            let maxImag = respImag[0]
+            for (let i = 0; i < respImag.length; ++i) {
+                if (respReal[i] > maxReal) {
+                    maxReal = respReal[i]
+                }
+                if (respImag[i] > maxImag) {
+                    maxImag = respImag[i]
+                }
+            }
+            if (Math.abs(maxReal / maxImag) < 100) {
+                console.warn("Impulse response has large imaginary component", maxReal, maxImag)
             }
         }
     }
@@ -2127,23 +2288,10 @@
         impulseResponse() {
             const [respReal, respImag] = this.freqResponse()
 
-            const paddedPts = 2 ** Math.ceil(Math.log2(respReal.length))
-            const padReal = new Array(paddedPts).fill(0)
-            const padImag = new Array(paddedPts).fill(0)
-            ifftshift(padReal, respReal)
-            ifftshift(padImag, respImag)
+            // Need amplitudes to be same as CTFT, thus scale by df, which is 1/impulseUi
+            fft(respReal, respImag, {inverse: true, shift: true, scale: 1 / blocks[SIMULATOR]._uiTimesteps._value})
+            super.checkFftResult(respReal, respImag)
 
-            ifft(padReal, padImag)
-
-            // Time domain impulse should be purely real
-            for (let i = 0; i < padImag.length; ++i) {
-                if (Math.abs(padImag[i]) > 1e-5) {
-                    console.warn("Impulse response has large imaginary component", padImag[i])
-                    break
-                }
-            }
-
-            fftshiftN(respReal, padReal)
             return respReal
         }
 
@@ -2306,20 +2454,183 @@
             return this._tfs[this._selectedIndex]
         }
     }
+
+    class FfeSetting { // Settings for FFE cursors
+        constructor(numPrecursor, numPostcursor, stepSize) { // 3 numbers, # pre/post/step size for cursors
+            this.stepSize = stepSize
+
+            this._numPrecursor = new NumberSetting("Precursors", 0, 32, 1, numPrecursor)
+            this._numPostcursor = new NumberSetting("Postcursors", 0, 32, 1, numPostcursor)
+            this._cursors = []
+
+            this.initCursors()
+
+            this._numPrecursor.onchange = this._numPostcursor.onchange = () => {
+                this.initCursors()
+                this.show(null) // Try to show UI if available
+            }
+
+            // UI
+            this.inputDiv = null
+            this.updateFigure = () => {} // Called when cursor settings changed
+        }
+
+        initCursors(numPre, numPost) {
+            this._cursors = []
+
+            let onCursorChange = () => {
+                this.updateFigure()
+            }
+
+            for (let i = this._numPrecursor._value; i > 0; --i) {
+                let cursor = new NumberSetting("Cursor Cm" + i, -1, 1, this.stepSize, 0)
+                cursor.onchange = onCursorChange
+                this._cursors.push(cursor)
+            }
+
+            let c0 = new NumberSetting("Cursor C0", -1, 1, this.stepSize, 1)
+            c0.onchange = onCursorChange
+            this._cursors.push(c0)
+
+            for (let i = 1; i <= this._numPostcursor._value; ++i) {
+                let cursor = new NumberSetting("Cursor C" + i, -1, 1, this.stepSize, 0)
+                cursor.onchange = onCursorChange
+                this._cursors.push(cursor)
+            }
+        }
+
+        serialize() {
+            let stream = [this._numPrecursor.serialize(), this._numPostcursor.serialize()]
+            for (const cursor of this._cursors) {
+                stream.push(cursor.serialize())
+            }
+            return stream
+        }
+
+        deserialize(stream) {
+            // Check number of pre/postcursors match
+            this._numPrecursor.deserialize(stream.shift())
+            this._numPostcursor.deserialize(stream.shift())
+
+            this.initCursors()
+
+            for (const cursor of this._cursors) {
+                cursor.deserialize(stream.shift())
+            }
+        }
+
+        backSerialize() { // Only serialize cursor values
+            let stream = [this._numPrecursor._value, this._numPostcursor._value]
+            for (const cursor of this._cursors) {
+                stream.push(cursor.serialize())
+            }
+            return stream
+        }
+
+        backDeserialize(stream) {
+            // Check number of pre/postcursors match
+            const numPre = stream.shift()
+            const numPost = stream.shift()
+
+            if (numPre == this._numPrecursor._value && numPost == this._numPostcursor._value) {
+                for (const cursor of this._cursors) {
+                    cursor.backSet(stream.shift())
+                }
+            }
+            this.updateFigure() // Try to update figure if available
+        }
+
+        show(sectionDiv) { // sectionDiv can be null if show was called previously with a sectionDiv
+            if (!sectionDiv && !this.inputDiv) {
+                return // No prior div to use
+            }
+
+            // Settings on the left, figure on the right
+            let groupDiv = document.createElement("div")
+            groupDiv.classList.add("input-div", "input-div-group")
+
+            this._numPrecursor.show(groupDiv)
+            this._numPostcursor.show(groupDiv)
+            for (const cursor of this._cursors) {
+                cursor.show(groupDiv)
+            }
+
+            // Draw figure
+            let figureContainer = document.createElement("div")
+            figureContainer.classList.add("figure-container")
+
+            let figureDiv = document.createElement("div")
+            figureContainer.appendChild(figureDiv)
+
+            this.updateFigure = () => {
+                plotFigure(
+                    figureDiv,
+                    [range(-this._numPrecursor._value, this._numPostcursor._value + 1)],
+                    [this.cursorVal()],
+                    {
+                        mode: "stem",
+                        width: 400,
+                        xTickFilter: (tick) => Number.isInteger(tick)
+                    }
+                );
+            }
+            this.updateFigure()
+
+            if (!sectionDiv) {
+                this.inputDiv.innerHTML = ""
+                this.inputDiv.appendChild(groupDiv)
+                this.inputDiv.appendChild(figureContainer)
+            }
+            else {
+                let inputDiv = document.createElement("div")
+                inputDiv.classList.add("input-div")
+
+                inputDiv.appendChild(groupDiv)
+                inputDiv.appendChild(figureContainer)
+                this.inputDiv = inputDiv
+
+                sectionDiv.appendChild(inputDiv)
+            }
+        }
+
+        numPre() {
+            return this._numPrecursor._value
+        }
+
+        numPost() {
+            return this._numPostcursor._value
+        }
+
+        cursorVal() {
+            return map(this._cursors, (c) => c._value)
+        }
+    }
 </script>
 <script id="js-shared-block">
     // Logic for the blocks
 
-    // Definition of 1 UI (Unit Interval not User Interface)
-    // Timesteps for a UI starts at the previous UI, and ends 1 before the next UI
-    //  [       )
-    //  <-------> 1 UI
-    // -1   0   1
-    //
-    // Time and FFT plots are in units of UI and 1/UI
+    // There are 2 copies of blocks, one in the UI thread, and one in simulator thread
+    // Options are set in the UI thread, then serialize() and sent to simulator thread
+    //   simulator thread deserialize(), and calls simInit() allowing options to be synchronized
+    // Training logic adjusts settings in simulator thread, backSerialize() and sent to UI thread
+    //   UI thread backDeserialize() to update options if required
+
+    // UI methods
+    // showFigure:   Called to draw HTML UI for figure
+    // updateFigure: Called to update existing figure with new waveform
+    // showSettings: Called to draw HTML UI for the settings
+    // showHelp:     Called to set help text
+
+    // Simulator methods
+    // simInit:      Called when simulation parameters have chanced, to load data
+    // step:         Evaluates block with given inputs
 
     const POSEDGE = 1
     const NEGEDGE = -1
+
+    const MIN_DIG_CODE = -65536
+    const MAX_DIG_CODE = 65535
+    const FFE_STEP     = 1/2**8
 
     // Sets the help text
     // msg can be string or list of strings
@@ -2327,16 +2638,12 @@
         let body = document.getElementById("help-body")
         body.innerHTML = ""
         if (typeof(msg) == "string") {
-            const p = document.createElement("p")
-            p.innerText = msg
-            body.appendChild(p)
+            msg = [msg]
         }
-        else {
-            for (const paragraph of msg) {
-                const p = document.createElement("p")
-                p.innerText = paragraph
-                body.appendChild(p)
-            }
+        for (const paragraph of msg) {
+            const p = document.createElement("p")
+            p.innerText = paragraph
+            body.appendChild(p)
         }
     }
 
@@ -2362,7 +2669,12 @@
             }
         }
 
-        // Draws HTML UI for figure
+        backSerialize() {
+        }
+
+        backDeserialize(stream) {
+        }
+
         showFigure() {
             let figureContainer = document.getElementById("setting-figure")
             figureContainer.innerHTML = ""
@@ -2382,22 +2694,26 @@
 
                 // Pre-select option
                 select.selectedIndex = this.selectedFigureIndex
-                this.figures[this.selectedFigureIndex].create(figureDiv)
+                let selectedFigure = this.figures[this.selectedFigureIndex]
+                selectedFigure.show(figureDiv)
+                selectedFigure.showHelp()
                 select.onchange = () => {
                     this.selectedFigureIndex = select.selectedIndex
-                    this.figures[this.selectedFigureIndex].create(figureDiv)
+                    let selectedFigure = this.figures[this.selectedFigureIndex]
+                    selectedFigure.show(figureDiv)
+                    selectedFigure.showHelp()
                 }
             }
         }
 
         updateFigure(waveforms, blkIdx) {
             if (this.figures.length > 0) {
-                this.figures[this.selectedFigureIndex].show(waveforms, blkIdx)
+                this.figures[this.selectedFigureIndex].update(waveforms, blkIdx)
             }
         }
 
-        // Draws HTML UI for the settings
         showSettings() {
+            document.getElementById("setting-title-line").style.visibility = "visible"
             document.getElementById("setting-title").innerText = this.name
 
             let sectionDiv = document.getElementById("setting-section")
@@ -2407,13 +2723,7 @@
             }
         }
 
-        // Called when simulation parameters have chanced, to load data
         simInit() {
-        }
-
-        // Evaluates block with given inputs
-        step() {
-            console.error("Step function not implemented")
         }
     }
 
@@ -2451,75 +2761,44 @@
     }
 
     class Ffe extends Block { // Base class for FFEs
-        constructor(numPrecursor, numPostcursor) {
+        constructor(ffeSetting) {
             super()
-            this._numPrecursor = new NumberSetting("Precursors", 0, 32, 1, numPrecursor)
-            this._numPostcursor = new NumberSetting("Postcursors", 0, 32, 1, numPostcursor)
+            this._ffeSetting = ffeSetting
 
-            this._numPrecursor.onchange = this._numPostcursor.onchange = () => {
-                this.initCursors()
-                this.showSettings()
-            }
-
-            this._settings = []
-            this._cursorSetting = [] // Just the settings for each cursor
-            this.prevCodes = []
-            this.initCursors()
-
+            this.prevCodes = new Array(this._ffeSetting.cursorVal().length).fill(0)
             this.outVal = 0
         }
 
-        serialize() {
-            // Need to know number of cursors first
-            let stream = super.serialize()
-            return [this._numPrecursor._value, this._numPostcursor._value, stream]
-        }
-
         deserialize(settingStream) {
-            this._numPrecursor._value = settingStream[0]
-            this._numPostcursor._value = settingStream[1]
-            this.initCursors()
-            super.deserialize(settingStream[2])
+            const oldPre = this._ffeSetting.numPre()
+            const oldPost = this._ffeSetting.numPost()
+
+            super.deserialize(settingStream)
+
+            const newPre = this._ffeSetting.numPre()
+            const newPost = this._ffeSetting.numPost()
+
+            // Update FFE memory if tap count changed
+            if (oldPre != newPre || oldPost != newPost) {
+                this.prevCodes = new Array(this._ffeSetting.cursorVal().length).fill(0)
+            }
         }
 
-        // Creates this._settings for cursors
-        initCursors() {
-            this._cursorSetting = []
-
-            for (let i = this._numPrecursor._value; i > 0; --i) {
-                let cursor = new NumberSetting("Cursor Cm" + i, -1, 1, 0.015625, 0)
-                this._cursorSetting.push(cursor)
-            }
-
-            let c0 = new NumberSetting("Cursor C0", -1, 1, 0.015625, 1)
-            this._cursorSetting.push(c0)
-
-            for (let i = 1; i <= this._numPostcursor._value; ++i) {
-                let cursor = new NumberSetting("Cursor C" + i, -1, 1, 0.015625, 0)
-                this._cursorSetting.push(cursor)
-            }
-
-            this.prevCodes = new Array(this._cursorSetting.length).fill(0)
-
-            // Add cursor setings to settings
-            this._settings = [this._numPrecursor, this._numPostcursor]
-            this._settings.push.apply(this._settings, this._cursorSetting)
-        }
-
-        step(txClk, dacCode) {
-            if (txClk == POSEDGE) {
+        step(clk, dacCode) {
+            if (clk == POSEDGE) {
                 // Add new code
                 this.prevCodes.shift()
                 this.prevCodes.push(dacCode)
 
                 // Sum FIR filter
+                const cursorVal = this._ffeSetting.cursorVal()
                 let sum = 0
-                for (let i = 0; i < this._cursorSetting.length; ++i) {
+                for (let i = 0; i < cursorVal.length; ++i) {
                     // Last in prevCodes is latest
-                    // First is cursor setting is latest
-                    sum += this.prevCodes[this._cursorSetting.length - i - 1] * this._cursorSetting[i]._value
+                    // First is cursor setting is latest (precursor)
+                    sum += this.prevCodes[cursorVal.length - i - 1] * cursorVal[i]
                 }
-                this.outVal = sum
+                this.outVal = Math.floor(sum)
             }
             return this.outVal
         }
@@ -2576,7 +2855,7 @@
             // Frequency domain: The maximum frequency (fs/2)
             this._uiTimesteps = new NumberSetting("Timesteps per UI [1/UI]", 8, 1000, 1, 64)
 
-            this._runDuration = new NumberSetting("Timesteps per waveform update", 10, 10000, 10, 100)
+            this._runDuration = new NumberSetting("Timesteps per waveform update", 10, 10000, 10, 200)
 
             // Waveform views
             this.wfmHistLen = 20000
@@ -2636,7 +2915,8 @@
             setHelp([
                 "This controls the simulation. Continuous time blocks (DAC output, loss, CTLE, VGA) are modelled as LTI systems and simulated using their impulse responses. Time and frequency are normalized to units of Unit Intervals [UI] and [1/UI] respectively, where 1 UI is the time to transmit 1 bit.",
                 "\"UI of impulses\" controls how long an impulses is computed for. For accurate results, the start and end of impulse responses should be near 0.",
-                "\"Timesteps per UI\" controls the numerical integration accuracy for convolution. This also affects the maximum frequency in frequency response as it is the sampling rate for FFT."
+                "\"Timesteps per UI\" controls the numerical integration accuracy for convolution. This also affects the maximum frequency in frequency response as it is the sampling rate for FFT.",
+                "\"Timesteps per waveform update\" controls how many timesteps are simulated when the waveforms are updated. Larger number of timesteps runs the simulation faster."
             ])
         }
     }
@@ -2677,8 +2957,8 @@
     class Encoder extends Block {
         constructor() {
             super()
-            this._level0 = new NumberSetting("DAC code for bit 0", -65536, 65536, 1, -64)
-            this._level1 = new NumberSetting("DAC code for bit 1", -65536, 65536, 1, 63)
+            this._level0 = new NumberSetting("DAC code for bit 0", MIN_DIG_CODE, MAX_DIG_CODE, 1, -64)
+            this._level1 = new NumberSetting("DAC code for bit 1", MIN_DIG_CODE, MAX_DIG_CODE, 1, 63)
 
             this.name = "Encoder"
             this._settings = [
@@ -2709,8 +2989,13 @@
 
     class Txffe extends Ffe {
         constructor() {
-            super(4, 2) // 4 pre, 2 post
+            let ffeSetting = new FfeSetting(4, 2, FFE_STEP) // 4 pre, 2 post
+            super(ffeSetting)
+
             this.name = "Tx FFE"
+            this._settings = [
+                ffeSetting
+            ]
             this.figures = [
                 new CtPlot("Output"),
                 new DtPlot("Samples", "tx")
@@ -2731,8 +3016,8 @@
                 new Tf("Nyquist", (f) => rect(f)),
                 new Tf("Raised Cosine", (f, b) => raisedCosine(f, b), [new NumberSetting("Rolloff", 0, 1, 0.1, 0.1)])
             ])
-            this._levelMin = new NumberSetting("Min DAC code", -65536, 65536, 1, -64)
-            this._levelMax = new NumberSetting("Max DAC code", -65536, 65536, 1, 63)
+            this._levelMin = new NumberSetting("Min DAC code", MIN_DIG_CODE, MAX_DIG_CODE, 1, -64)
+            this._levelMax = new NumberSetting("Max DAC code", MIN_DIG_CODE, MAX_DIG_CODE, 1, 63)
             this._vrefn = new NumberSetting("Min output voltage", -10, 10, 0.1, -1)
             this._vrefp = new NumberSetting("Max output voltage", -10, 10, 0.1, 1)
 
@@ -2746,6 +3031,7 @@
             ]
             this.figures = [
                 new CtPlot("Output"),
+                new FftPlot("Output FFT"),
                 new DtPlot("Samples", "tx"),
                 new EyePlot("Eye Diagram", "tx"),
             ]
@@ -2839,7 +3125,7 @@
                     }, [
                     new NumberSetting("Amplitude", 0, 5, 0.1, 1),
                     new NumberSetting("Bandwidth [1/UI]", 0, 5, 0.01, 0.2),
-                    new NumberSetting("Zero [1/UI]", 0, 5, 0.01, 0.6)
+                    new NumberSetting("Zero [1/UI]", 0, 5, 0.01, 0.5)
                 ])
             ])
             super(pulse)
@@ -2850,6 +3136,7 @@
             ]
             this.figures = [
                 new CtPlot("Output"),
+                new FftPlot("Output FFT"),
                 new DtPlot("Tx Clock Samples", "tx"),
                 new DtPlot("Rx Clock Samples", "rx"),
                 new EyePlot("Eye Diagram", "rx"),
@@ -2874,6 +3161,7 @@
             ]
             this.figures = [
                 new CtPlot("Output"),
+                new FftPlot("Output FFT"),
                 new DtPlot("Tx Clock Samples", "tx"),
                 new DtPlot("Rx Clock Samples", "rx"),
                 new EyePlot("Eye Diagram", "rx")
@@ -3006,9 +3294,18 @@
                 // "MLSD" TBD
             ])
 
+            this._dlevTrainEn = new EnableSetting("Train digital level", true)
+            this._dlevTrainIter = new NumberSetting("Digital level train iterations", 1, MAX_DIG_CODE, 1, 256)
+            this._dlev0 = new NumberSetting("Digital level 0", MIN_DIG_CODE, MAX_DIG_CODE, 1, -32)
+            this._dlev1 = new NumberSetting("Digital level 1", MIN_DIG_CODE, MAX_DIG_CODE, 1, 31)
+
             this.name = "MLSD/DFE"
             this._settings = [
-                this._dfeType
+                this._dfeType,
+                this._dlevTrainEn,
+                this._dlevTrainIter,
+                this._dlev0,
+                this._dlev1
             ]
             this.figures = [
                 new CtPlot("Output"),
@@ -3017,6 +3314,21 @@
 
             this.dfeThresh = 0
             this.outVal = 0
+
+            this.dlevAccumCount = 0
+            this.dlev0Accum = 0
+            this.dlev1Accum = 0
+        }
+
+        backSerialize() {
+            return [this._dlev0._value, this._dlev1._value]
+        }
+
+        backDeserialize(stream) {
+            if (this._dlevTrainEn._value) {
+                this._dlev0.backSet(stream[0])
+                this._dlev1.backSet(stream[1])
+            }
         }
 
         showHelp() {
@@ -3029,42 +3341,160 @@
         step(rxClk, adcCode) {
             if (rxClk == POSEDGE) {
                 this.outVal = (adcCode > this.dfeThresh) ? 1 : 0
-                this.dfeThresh = this.outVal * this._dfeFeedback._value
+                this.dfeThresh = Math.floor(this.outVal * this._dfeFeedback._value)
+
+                // DLEV train
+                if (this._dlevTrainEn._value) {
+                    // Measure error from current dlev
+                    if (adcCode > this.dfeThresh) {
+                        this.dlev1Accum += Math.sign(adcCode - this._dlev1._value)
+                    }
+                    else {
+                        this.dlev0Accum += Math.sign(adcCode - this._dlev0._value)
+                    }
+
+                    ++this.dlevAccumCount
+                    if (this.dlevAccumCount >= this._dlevTrainIter._value) {
+                        // Adjust current dlev based on error
+                        this._dlev0._value += Math.sign(this.dlev0Accum)
+                        this._dlev1._value += Math.sign(this.dlev1Accum)
+
+                        this.dlevAccumCount = 0
+                        this.dlev0Accum = 0
+                        this.dlev1Accum = 0
+                    }
+                }
+                else {
+                    this.dlevAccumCount = 0
+                    this.dlev0Accum = 0
+                    this.dlev1Accum = 0
+                }
             }
             return this.outVal
         }
     }
 
     class Rxffe extends Ffe {
-        constructor() {
-            super(8, 24) // 8 pre, 24 post
+        constructor(ffeSetting) {
+            if (!ffeSetting) {
+                ffeSetting = new FfeSetting(8, 24, FFE_STEP) // 8 pre, 24 post
+            }
+            super(ffeSetting)
+
             this.name = "Rx FFE"
             this.figures = [
                 new CtPlot("Output"),
                 new DtPlot("Samples", "rx")
             ]
+
+            this._ffeTrainEn = new EnableSetting("Train FFE coefficients", true)
+            this._ffeC0TrainEn = new EnableSetting("Train FFE Cursor C0", false) // Allowing C0 to move causes DLEV to drop towards 0
+            this._ffeTrainIter = new NumberSetting("FFE coefficient train iterations", 1, MAX_DIG_CODE, 1, 16)
+            this._ffeTrainStep = new NumberSetting("FFE coefficient train step", FFE_STEP, 16 * FFE_STEP, FFE_STEP, FFE_STEP)
+            this._settings = [
+                this._ffeTrainEn,
+                this._ffeC0TrainEn,
+                this._ffeTrainIter,
+                this._ffeTrainStep,
+                ffeSetting
+            ]
+
+            this.coeffAccumCount = 0
+            this.coeffAccum = []
+        }
+
+        backSerialize() {
+            return this._ffeSetting.backSerialize()
+        }
+
+        backDeserialize(stream) {
+            if (this._ffeTrainEn._value) {
+                this._ffeSetting.backDeserialize(stream)
+            }
         }
 
         showHelp() {
             setHelp([
-                "This performs linear equalization with a FIR filter (Feed Forward Equalizer). A large equalizer is used at the receiver to remove ISI in the data. If equalization is applied on the pre/postcursors, the main cursor C0 must be reduced to avoid saturating the ADC codes."
+                "This performs linear equalization with a FIR filter (Feed Forward Equalizer). A large equalizer is used at the receiver to remove ISI in the data. The training algorithm measures the error between the FFE output and the digital level set in MLSD/DFE, performing a least mean squares update to bring the error to 0."
             ])
+        }
+
+        simInit() {
+            // Initialize accumulator if length changed
+            if (this.coeffAccum.length != this._ffeSetting._cursors.length) {
+                this.coeffAccum = new Array(this._ffeSetting._cursors.length).fill(0)
+            }
+        }
+
+        // Current adcCode, previous output emulated to level
+        step(clk, adcCode, edfe) {
+            // FFE training, LMS update
+            if (clk == POSEDGE) {
+                if (this._ffeTrainEn._value) {
+                    // Emulate original value and calculate error
+                    if (!edfe) {
+                        edfe = (blocks[MLSD].outVal == 0) ? blocks[MLSD]._dlev0._value : blocks[MLSD]._dlev1._value
+                    }
+                    const error = edfe - this.outVal
+
+                    for (let i = 0; i < this._ffeSetting._cursors.length; ++i) {
+                        // Last in prevCodes is latest
+                        // First is cursor setting is latest (precursor)
+                        this.coeffAccum[i] += error * this.prevCodes[this.prevCodes.length - 1 - i]
+                    }
+
+                    ++this.coeffAccumCount
+                    if (this.coeffAccumCount >= this._ffeTrainIter._value) {
+                        this.coeffAccumCount = 0
+
+                        for (let i = 0; i < this.coeffAccum.length; ++i) {
+                            // Don't train C0 if disabled
+                            if (i != this._ffeSetting.numPre() || (i == this._ffeSetting.numPre() && this._ffeC0TrainEn._value)) {
+                                const step = this._ffeTrainStep._value
+                                const newVal = this._ffeSetting._cursors[i]._value + step * Math.sign(this.coeffAccum[i])
+                                // Round to nearest
+                                this._ffeSetting._cursors[i].backSet(Math.floor(newVal / FFE_STEP) * FFE_STEP)
+                            }
+                            this.coeffAccum[i] = 0
+                        }
+                    }
+                }
+                else {
+                    this.coeffAccumCount = 0
+                    for (let i = 0; i < this.coeffAccum.length; ++i) {
+                        this.coeffAccum[i] = 0
+                    }
+                }
+            }
+
+            return super.step(clk, adcCode)
         }
     }
 
     class Cdr extends Block {
         constructor() {
             super()
-            this._mmTarget0 = new NumberSetting("Mueller-Muller level target 0", -64, 64, 1, -40)
-            this._mmTarget1 = new NumberSetting("Mueller-Muller level target 1", -64, 64, 1, 40)
+            this._mmTrainEn = new EnableSetting("Use CDR digital levels", true)
+            this._mmTarget0 = new NumberSetting("Mueller-Muller level target 0", MIN_DIG_CODE, MAX_DIG_CODE, 1, -40)
+            this._mmTarget1 = new NumberSetting("Mueller-Muller level target 1", MIN_DIG_CODE, MAX_DIG_CODE, 1, 40)
+
             this._cdrType = new SelectSetting("CDR type", [
-                ["Mueller-Muller", this._mmTarget0, this._mmTarget1],
+                ["Mueller-Muller", this._mmTrainEn, this._mmTarget0, this._mmTarget1],
                 "Bang-Bang"
             ])
 
+            this._cdrDlevTrainEn = new EnableSetting("Train CDR digital level", true)
+            this._cdrDlevTrainIter = new NumberSetting("CDR digital level train iterations", 1, MAX_DIG_CODE, 1, 64)
+            this._cdrDlev0 = new NumberSetting("CDR digital level 0", MIN_DIG_CODE, MAX_DIG_CODE, 1, -40)
+            this._cdrDlev1 = new NumberSetting("CDR digital level 1", MIN_DIG_CODE, MAX_DIG_CODE, 1, 40)
+
             this.name = "CDR"
             this._settings = [
-                this._cdrType
+                this._cdrType,
+                this._cdrDlevTrainEn,
+                this._cdrDlevTrainIter,
+                this._cdrDlev0,
+                this._cdrDlev1
             ]
             this.figures = [
                 new CtPlot("Output"),
@@ -3074,6 +3504,8 @@
             this.rxClkElapsed = 0 // Timesteps elapsed
             this.doubleRate = false // With BBPD, CDR path needs to run at 2x clock freq
             this.pdVote = 0 // Phase adjustment
+
+            this.pdTimeout = 0 // Check for CDR unlocked
             this.pdHist = 0
 
             this.mmError = 0
@@ -3082,6 +3514,31 @@
             this.bbpd0 = 0 // 3 samples for bang-bang PD
             this.bbpd1 = 0
             this.bbpd2 = 0
+
+            this.mmLevelAccumCount = 0
+            this.mmLevel0Accum = 0
+            this.mmLevel1Accum = 0
+
+            // Training
+            this.cdrDlevAccumCount = 0
+            this.cdrDlev0Accum = 0
+            this.cdrDlev1Accum = 0
+        }
+
+        backSerialize() {
+            return [this._cdrDlev0._value, this._cdrDlev1._value]
+        }
+
+        backDeserialize(stream) {
+            if (this._cdrDlevTrainEn._value) {
+                this._cdrDlev0.backSet(stream[0])
+                this._cdrDlev1.backSet(stream[1])
+            }
+            // Use the levels from CDR DLEV
+            if (this._mmTrainEn._value) {
+                this._mmTarget0.backSet(this._cdrDlev0._value)
+                this._mmTarget1.backSet(this._cdrDlev1._value)
+            }
         }
 
         showHelp() {
@@ -3112,12 +3569,19 @@
                         if (error == -1 && this.mmError == 1) {
                             // Early
                             this.pdVote = 1
+
                             ++this.pdHist
+                            this.pdTimeout = 0
                         }
                         else if (error == 1 && this.mmError == -1) {
                             // Late
                             this.pdVote = -1
+
                             --this.pdHist
+                            this.pdTimeout = 0
+                        }
+                        else {
+                            ++this.pdTimeout
                         }
                     }
 
@@ -3137,12 +3601,19 @@
                         if (this.bbpd0 == this.bbpd1) {
                             // Early
                             this.pdVote = 1
+
                             ++this.pdHist
+                            this.pdTimeout = 0
                         }
                         else if (this.bbpd1 == this.bbpd2) {
                             // Late
                             this.pdVote = -1
+
                             --this.pdHist
+                            this.pdTimeout = 0
+                        }
+                        else {
+                            ++this.pdTimeout
                         }
                     }
                 }
@@ -3153,16 +3624,50 @@
                 this.doubleRate = true
             }
 
-            if (Math.abs(this.pdHist) > 16) {
-                console.warn("CDR failed to lock")
+            if (Math.abs(this.pdHist) > 128 || Math.abs(this.pdTimeout) > 128) {
+                this.pdTimeout = 0
+                this.pdHist = 0
+                console.warn("CDR is unlocked")
             }
+
+            if (rxClk == POSEDGE) {
+                // CDR DLEV train
+                if (this._cdrDlevTrainEn._value) {
+                    // Measure error from current dlev
+                    if (adcCode > 0) {
+                        this.cdrDlev1Accum += Math.sign(adcCode - this._cdrDlev1._value)
+                    }
+                    else {
+                        this.cdrDlev0Accum += Math.sign(adcCode - this._cdrDlev0._value)
+                    }
+
+                    ++this.cdrDlevAccumCount
+                    if (this.cdrDlevAccumCount >= this._cdrDlevTrainIter._value) {
+                        // Adjust current dlev based on error
+                        this._cdrDlev0._value += Math.sign(this.cdrDlev0Accum)
+                        this._cdrDlev1._value += Math.sign(this.cdrDlev1Accum)
+
+                        this.cdrDlevAccumCount = 0
+                        this.cdrDlev0Accum = 0
+                        this.cdrDlev1Accum = 0
+                    }
+                }
+                else {
+                    this.cdrDlevAccumCount = 0
+                    this.cdrDlev0Accum = 0
+                    this.cdrDlev1Accum = 0
+                }
+            }
+
             return this.pdVote
         }
     }
 
-    class Cdrffe extends Ffe {
+    class Cdrffe extends Rxffe {
         constructor() {
-            super(2, 6) // 2 pre, 6 post
+            let ffeSetting = new FfeSetting(2, 6, FFE_STEP) // 2 pre, 6 post
+            super(ffeSetting)
+
             this.name = "CDR FFE"
             this.figures = [
                 new CtPlot("Output"),
@@ -3172,26 +3677,30 @@
 
         showHelp() {
             setHelp([
-                "This performs linear equalization with a FIR filter (Feed Forward Equalizer). Applying equalization helps the CDR find the necessary transitions to recover the clock. If equalization is applied on the pre/postcursors, the main cursor C0 must be reduced to avoid saturating the ADC codes."
+                "This performs linear equalization with a FIR filter (Feed Forward Equalizer). Applying equalization helps the CDR find the necessary transitions to recover the clock. The training algorithm measures the error between the CDR FFE output and the CDR digital level, performing a least mean squares update to bring the error to 0."
             ])
         }
 
         step(rxClk, adcCode) {
+            // Make a decision based on previous output and feed it back for training
+            const edfe = (this.outVal > 0) ? blocks[CDR]._cdrDlev1._value : blocks[CDR]._cdrDlev0._value
+
             // With BBPD, CDR needs to run at 2x freq
             if (blocks[CDR].doubleRate) {
                 if (rxClk == NEGEDGE) {
-                    return super.step(POSEDGE, adcCode)
+                    return super.step(POSEDGE, adcCode, edfe)
                 }
             }
-            return super.step(rxClk, adcCode)
+
+            return super.step(rxClk, adcCode, edfe)
         }
     }
 
     class Adc extends Block {
         constructor() {
             super()
-            this._levelMin = new NumberSetting("Min ADC code", -65536, 65536, 1, -64)
-            this._levelMax = new NumberSetting("Max ADC code", -65536, 65536, 1, 63)
+            this._levelMin = new NumberSetting("Min ADC code", MIN_DIG_CODE, MAX_DIG_CODE, 1, -64)
+            this._levelMax = new NumberSetting("Max ADC code", MIN_DIG_CODE, MAX_DIG_CODE, 1, 63)
             this._vrefn = new NumberSetting("Min input voltage", -10, 10, 0.1, -1)
             this._vrefp = new NumberSetting("Max input voltage", -10, 10, 0.1, 1)
 
@@ -3258,6 +3767,7 @@
             ]
             this.figures = [
                 new CtPlot("Output"),
+                new FftPlot("Output FFT"),
                 new DtPlot("Tx Clock Samples", "tx"),
                 new DtPlot("Rx Clock Samples", "rx"),
                 new EyePlot("Eye Diagram", "rx")
@@ -3266,7 +3776,7 @@
 
         showHelp() {
             setHelp([
-                "This scales the input signal to full-scale of the ADC (Variable Gain Amplifier). The output response of the VGA can be adjusted with effects on the signal to noise ratio. SNR is maximized with a matched filter where the output response of the VGA matches the response of the DAC, this can be seen by observing the opening in the eye diagram."
+                "This scales the input signal to full-scale of the ADC (Variable Gain Amplifier). The output response of the VGA can be adjusted with effects on the signal to noise ratio. SNR is maximized with a matched filter where the output response of the VGA matches the response of the DAC, this can be seen by observing noise in the FFT or the opening in the eye diagram."
             ])
         }
 
@@ -3296,9 +3806,9 @@
                     return cdiv(num, denom)
                 }, [
                     new NumberSetting("DC gain", 0, 5, 0.1, 0.5),
-                    new NumberSetting("Zero frequency [1/UI]", 0.01, 5, 0.01, 0.4),
-                    new NumberSetting("Pole 1 frequency [1/UI]", 0, 5, 0.01, 0.45),
-                    new NumberSetting("Pole 2 frequency [1/UI]", 0, 5, 0.01, 0.5),
+                    new NumberSetting("Zero frequency [1/UI]", 0.01, 5, 0.01, 0.2),
+                    new NumberSetting("Pole 1 frequency [1/UI]", 0, 5, 0.01, 1),
+                    new NumberSetting("Pole 2 frequency [1/UI]", 0, 5, 0.01, 1),
                 ])
             ])
 
@@ -3309,6 +3819,7 @@
             ]
             this.figures = [
                 new CtPlot("Output"),
+                new FftPlot("Output FFT"),
                 new DtPlot("Tx Clock Samples", "tx"),
                 new DtPlot("Rx Clock Samples", "rx"),
                 new EyePlot("Eye Diagram", "rx")
@@ -3365,7 +3876,7 @@
         new Block()
     ]
 </script>
-<script id="js-simulator"> // Simulator logic
+<script id="js-simulator" type="text/js-worker"> // Simulator logic
     // This runs in a web worker
 
     // Allocate memory for results
@@ -3465,10 +3976,17 @@
                 stepBlock(PRBS_CHK, [rxClk, decoderOut])
             }
 
+            // Serialize training data
+            let trainStream = []
+            for (const block of blocks) {
+                trainStream.push(block.backSerialize())
+            }
+
             // Reply
             const json = {
                 type: "run-result",
-                wfm: blockWfm
+                wfm: blockWfm,
+                train: trainStream
             }
             postMessage(json);
         }
@@ -3534,10 +4052,16 @@
             }
             simulator.wfmStartTime += simulator._runDuration._value
 
+            // Process training data
+            for (let i = 0; i < blocks.length; ++i) {
+                blocks[i].backDeserialize(msg.train[i])
+            }
+
             // Run simulator again
             window.setTimeout(() => {
                 // Sync settings if it was modified
                 if (settingModified) {
+                    console.debug("Syncing settings")
                     settingModified = false
 
                     let blockStream = []
@@ -3566,13 +4090,16 @@
     function uiBlkHelpClick() {
         let title = document.getElementById("help-title")
         let body = document.getElementById("help-body")
+        let plotBody = document.getElementById("help-plot-body")
         if (body.style.visibility == "visible") {
             title.style.visibility = "hidden"
             body.style.visibility = "hidden"
+            plotBody.style.visibility = "hidden"
         }
         else {
             title.style.visibility = "visible"
             body.style.visibility = "visible"
+            plotBody.style.visibility = "visible"
         }
     }
 
