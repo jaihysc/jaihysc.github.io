@@ -906,7 +906,7 @@
     }
 
     .figure-control input {
-        max-width: 50px;
+        max-width: 40px;
     }
 
     .figure-control select {
@@ -992,21 +992,26 @@
 
     // Generic FFT function
     let fftReorderCache = [];
-    // opts: inverse, shift, scale
+    // opts: inverse, shift, scale, pad
     //       shift uses fftshift, ifftshift
     //       scale can be "none",
     //                    "amplitude" (Acos(t) has amplitude A/2 in each peak)
     //                    "2Xamplitude" (Acos(t) has amplitude A in each peak),
     //                    or a number
+    //       pad auto pads to power of 2 for real and imag
     function fft(inRe, inIm, opts) {
         const inverse = (opts && opts.inverse) ? opts.inverse : false;
         const shift = (opts && opts.shift) ? opts.shift : false;
         const scale = (opts && opts.scale) ? opts.scale : false;
+        const pad = (opts && opts.pad) ? opts.pad : false;
 
         const inN = inRe.length;
         const inNLog = Math.log2(inN);
         if (inRe.length != inIm.length) {
             throw new Error("Input lengths are not equal");
+        }
+        if (!Number.isInteger(inNLog) && !pad) {
+            throw new Error("Input must be power of 2");
         }
 
         // Zero pad to power of 2 length
@@ -1153,40 +1158,21 @@
                     out[out.length - 1] = a[outMid]
                 }
             }
-            if (!inverse) {
-                // FFT can't drop samples or else frequencies are wrong
-                // Resize the input array to size n
-                for (let i = 0; i < n; ++i) {
-                    inRe[i] = 0
-                    inIm[i] = 0
-                }
+
+            // Resize the input array to size n
+            for (let i = 0; i < n; ++i) {
+                inRe[i] = 0
+                inIm[i] = 0
             }
+
             fftshift(inRe, re)
             fftshift(inIm, im)
         }
         else {
-            // Drop the samples for IFFT in the middle of the output
-            if (!inverse) {
-                // FFT can't drop samples or else frequencies are wrong
-                // Resize the input array to size n
-                for (let i = 0; i < n; ++i) {
-                    inRe[i] = re[i]
-                    inIm[i] = im[i]
-                }
-            }
-            else {
-                const outMid = Math.floor(inN / 2)
-                for (let i = 0; i < outMid; ++i) {
-                    inRe[i] = re[i]
-                    inRe[inN - 1 - i] = re[n - 1 - i]
-
-                    inIm[i] = im[i]
-                    inIm[inN - 1 - i] = im[n - 1 - i]
-                }
-                if (inN % 2 != 0) { // Handle middle point
-                    inRe[outMid] = re[outMid]
-                    inIm[outMid] = im[outMid]
-                }
+            // Resize the input array to size n
+            for (let i = 0; i < n; ++i) {
+                inRe[i] = re[i]
+                inIm[i] = im[i]
             }
         }
 
@@ -1335,6 +1321,11 @@
     //
     // Time and FFT plots are in units of UI and 1/UI
 
+    const PLOT_WIDTH = 1000 // This should be the width of the main area
+    const PLOT_HEIGHT = 200
+
+    const FIGURE_WIDTH = 400 // The diagram beside the setting
+
     // Plots provided data arrays in given figure (div)
     // Each element of xs, ys is an array of values
     // opts: mode="line", "scatter", "stem", width, height, opacity, title,
@@ -1366,8 +1357,8 @@
             throw new Error("Invalid mode");
         }
 
-        const width = (opts && opts.width) ? opts.width : 1000;
-        const height = (opts && opts.height) ? opts.height : 200;
+        const width = (opts && opts.width) ? opts.width : PLOT_WIDTH;
+        const height = (opts && opts.height) ? opts.height : PLOT_HEIGHT;
         const opacity = (opts && opts.opacity) ? opts.opacity : 1;
         const margin = 10;
 
@@ -1540,7 +1531,7 @@
             const timeAxis = blocks[SIMULATOR].wfmTimeVector()
 
             // Decimate to speed up waveform update
-            const maxPoints = 1000
+            const maxPoints = PLOT_WIDTH
             const decimation = Math.round(waveform.length / maxPoints)
 
             const length = Math.floor(waveform.length / decimation)
@@ -1604,12 +1595,13 @@
 
             this.wfmQueue = []
             this.currentUi = 0
+            this.ui1Idx = 0
 
             this.eyeUi = 2 // UIs to draw eye for
             this.vmin = -3 // Voltage range to plot
             this.vmax = 3
-            this.bufferWidth = 0
-            this.bufferHeight = 200 // This sets the number of bins for voltages
+            this.bufferWidth = 0 // Auto set
+            this.bufferHeight = PLOT_HEIGHT // This sets the number of bins for voltages
             this.buffer = []
             this.bufferMax = 0
 
@@ -1622,15 +1614,15 @@
             this.currentUi = 0
 
             const margin = 10
-            const width = 1000
-            const height = 200
+            const width = PLOT_WIDTH
+            const height = PLOT_HEIGHT
 
             // Draw axis
             const svg = d3.create("svg")
                 .attr("width", width)
                 .attr("height", height)
                 .attr("viewBox", [0, 0, width, height])
-                .attr("style", "position: absolute; left: 0; width: 100%; height: auto;")
+                .attr("style", "position: absolute; left: 0; top: 0; width: 100%; height: auto;")
 
             let drawAxis = () => {
                 svg.selectAll("*").remove() // Remove old axis
@@ -1651,8 +1643,6 @@
             this.canvas = document.createElement("canvas")
             this.canvas.width = width - 2 * margin
             this.canvas.height = height - 2 * margin
-            this.canvas.style.marginLeft = margin + "px"
-            this.canvas.style.marginTop = margin + "px"
 
             // Div of buttons to control eye diagram
             let controlDiv = document.createElement("div")
@@ -1677,7 +1667,7 @@
 
             let vMinInput = document.createElement("input")
             vMinInput.type = "number"
-            vMinInput.step = 1
+            vMinInput.step = 0.5
             vMinInput.value = this.vmin
             vMinInput.onchange = () => {
                 this.vmin = Number(vMinInput.value)
@@ -1689,7 +1679,7 @@
 
             let vMaxInput = document.createElement("input")
             vMaxInput.type = "number"
-            vMaxInput.step = 1
+            vMaxInput.step = 0.5
             vMaxInput.value = this.vmax
             vMaxInput.onchange = () => {
                 this.vmax = Number(vMaxInput.value)
@@ -1720,15 +1710,23 @@
             controlDiv.appendChild(clockSelect)
 
 
+            // Align the canvas to the axis
+            let canvasContainer = document.createElement("div")
+            canvasContainer.style.marginLeft = margin + "px"
+            canvasContainer.style.marginRight = margin + "px"
+            canvasContainer.style.paddingTop = margin + "px"
+            canvasContainer.style.paddingBottom = margin + "px"
+            canvasContainer.appendChild(this.canvas)
+
             figureDiv.innerHTML = ""
-            figureDiv.appendChild(this.canvas)
+            figureDiv.appendChild(canvasContainer)
             figureDiv.appendChild(svg.node())
             figureDiv.appendChild(controlDiv)
         }
 
         showHelp() {
             setPlotHelp([
-                "The eye diagram uses either the Tx or Rx clock to plot traces. If the CDR is not locked, the eye will not appear centered."
+                "The eye diagram uses either the Tx or Rx clock to plot traces. If the CDR is not locked, the eye will not appear centered. To speed up the plot, \"Timesteps per waveform update\" can be increased in the simulator settings."
             ])
         }
 
@@ -1761,10 +1759,13 @@
                     // -1 to invert since canvas uses 0 is top
                     let y = Math.floor((-1 * wfm[x] - this.vmin) * pixelPerV)
                     if (y > this.bufferHeight) {
-                        y = this.bufferHeight - 1
+                        // Ignore point if out of range, plotting it causes this.bufferMax to become very big and makes rest of plot wrong
+                        // y = this.bufferHeight - 1
+                        continue
                     }
                     else if (y < 0) {
-                        y = 0
+                        // y = 0
+                        continue
                     }
 
                     const pixelIdx = x + y * this.bufferWidth
@@ -1801,13 +1802,17 @@
                 else {
                     if (waveforms[clkIdx][i] == POSEDGE) {
                         ++this.currentUi
+                        if (this.currentUi == 1) {
+                            // Remember index of UI 1,
+                            // so wfmQueue can be deleted up to this point when one waveform is plotted
+                            this.ui1Idx = this.wfmQueue.length // No -1 because new point not added yet
+                        }
+
                         if (this.currentUi >= this.eyeUi) {
                             this.currentUi = 0
 
-                            const drawWfm = this.wfmQueue.slice()
-                            updateEye(drawWfm)
-
-                            this.wfmQueue = []
+                            updateEye(this.wfmQueue)
+                            this.wfmQueue = this.wfmQueue.slice(this.ui1Idx)
                         }
                     }
                     this.wfmQueue.push(waveforms[blkIdx][i])
@@ -1819,64 +1824,66 @@
             if (this.buffer.length > 0) {
                 // Draw to new canvas first so it can be scaled later
                 let tempCanvas = document.createElement("canvas")
-                {
-                    tempCanvas.width = this.bufferWidth
-                    tempCanvas.height = this.bufferHeight
+                tempCanvas.width = this.bufferWidth
+                tempCanvas.height = this.bufferHeight
 
-                    let ctx = tempCanvas.getContext("2d")
-                    let imgData = ctx.createImageData(this.bufferWidth, this.bufferHeight)
+                let tempCtx = tempCanvas.getContext("2d")
+                let imgData = tempCtx.createImageData(this.bufferWidth, this.bufferHeight)
 
-                    // Eye gradient
-                    const eyeColor = [
-                        [255, 255, 255],
-                        [155, 248, 244], // Cyan
-                        [169, 255, 104], // Green
-                        [255, 147, 15], // Orange
-                        [255, 0, 0], // Red
-                    ]
-                    const eyeColorIntensity = [ // Maps value from 0 to 1 to a color
-                        0,
-                        0.05,
-                        0.1,
-                        0.4,
-                        1
-                    ]
+                // Eye gradient
+                const eyeColor = [
+                    [0, 0, 255], // Blue
+                    [155, 248, 244], // Cyan
+                    [169, 255, 104], // Green
+                    [255, 147, 15], // Orange
+                    [255, 0, 0], // Red
+                ]
+                const eyeColorIntensity = [ // Maps value from 0 to 1 to a color
+                    0.001,
+                    0.25,
+                    0.5,
+                    0.75,
+                    1
+                ]
+                let calcGradient = (intensity) => { // Value from 0 to 1
+                    let color = [255, 255, 255]
+                    // Find the portion of the piecewise gradient to use
+                    for (let j = eyeColorIntensity.length - 1; j >= 0; --j) {
+                        if (eyeColorIntensity[j] < intensity) {
+                            const colorStart = eyeColor[j]
+                            const colorEnd = eyeColor[j + 1]
 
-                    for (let y = 0; y < this.bufferHeight; ++y) {
-                        for (let x = 0; x < this.bufferWidth; ++x) {
-                            const pixelIdx = x + y * this.bufferWidth
+                            const intensityStart = eyeColorIntensity[j]
+                            const intensityEnd = eyeColorIntensity[j + 1]
 
-                            // Compute gradient
-                            const intensity = this.buffer[pixelIdx] / this.bufferMax
-                            // const intensity = pixelIdx / (this.canvasHeight * this.canvasWidth) // Plot gradient
-                            let color = [255, 255, 255]
-
-                            // Find the portion of the piecewise gradient to use
-                            for (let j = eyeColorIntensity.length - 1; j >= 0; --j) {
-                                if (eyeColorIntensity[j] < intensity) {
-                                    const colorStart = eyeColor[j]
-                                    const colorEnd = eyeColor[j + 1]
-
-                                    const intensityStart = eyeColorIntensity[j]
-                                    const intensityEnd = eyeColorIntensity[j + 1]
-
-                                    // Compute the color
-                                    for (let i = 0; i < 3; ++i) {
-                                        const slope = (colorEnd[i] - colorStart[i]) / (intensityEnd - intensityStart)
-                                        color[i] = slope * (intensity - intensityStart) + colorStart[i]
-                                    }
-                                    break
-                                }
+                            // Compute the color
+                            for (let i = 0; i < 3; ++i) {
+                                const slope = (colorEnd[i] - colorStart[i]) / (intensityEnd - intensityStart)
+                                color[i] = slope * (intensity - intensityStart) + colorStart[i]
                             }
-
-                            imgData.data[pixelIdx * 4] = color[0]
-                            imgData.data[pixelIdx * 4 + 1] = color[1]
-                            imgData.data[pixelIdx * 4 + 2] = color[2]
-                            imgData.data[pixelIdx * 4 + 3] = 255
+                            break
                         }
                     }
-                    ctx.putImageData(imgData, 0, 0)
+                    return color
                 }
+
+
+                for (let y = 0; y < this.bufferHeight; ++y) {
+                    for (let x = 0; x < this.bufferWidth; ++x) {
+                        const pixelIdx = x + y * this.bufferWidth
+
+                        // Compute gradient
+                        const intensity = this.buffer[pixelIdx] / this.bufferMax
+                        // const intensity = pixelIdx / (this.bufferWidth * this.bufferHeight) // Plot gradient
+                        const color = calcGradient(intensity)
+
+                        imgData.data[pixelIdx * 4] = color[0]
+                        imgData.data[pixelIdx * 4 + 1] = color[1]
+                        imgData.data[pixelIdx * 4 + 2] = color[2]
+                        imgData.data[pixelIdx * 4 + 3] = 255
+                    }
+                }
+                tempCtx.putImageData(imgData, 0, 0)
 
                 let ctx = this.canvas.getContext("2d")
                 ctx.setTransform(1, 0, 0, 1, 0, 0) // Reset scale
@@ -1895,7 +1902,8 @@
         }
 
         show(figureDiv) {
-            this.prevFreqY = [] // Clear previous since it is out of date
+            // Previous freqY may be out of date, but clearing it causes the plot axis to jump around each time
+            // this.prevFreqY = [] // Clear previous since it is out of date
             this.figureDiv = figureDiv
         }
 
@@ -1924,7 +1932,7 @@
 
             const wfmRe = yShortened
             const wfmIm = new Array(wfmRe.length).fill(0)
-            fft(wfmRe, wfmIm, {scale: "2Xamplitude"})
+            fft(wfmRe, wfmIm, {scale: "2Xamplitude", pad: true})
 
             // Take magnitude, only positive frequencies
             const freqLen = Math.ceil(wfmRe.length / 2)
@@ -1935,6 +1943,11 @@
 
             // Average output
             let newFreqY = freqY.slice()
+
+            if (this.prevFreqY.length > 0 && this.prevFreqY[0].length != newFreqY.length) {
+                // Clear history if point count changed
+                this.prevFreqY = []
+            }
 
             const currentNAvg = this.prevFreqY.length + 1
             for (let i = 0; i < freqY.length; ++i) {
@@ -2414,7 +2427,7 @@
                     yPts.pop()
                 }
 
-                plotFigure(figureDiv, [xPts], [yPts], { width: 400 })
+                plotFigure(figureDiv, [xPts], [yPts], { width: FIGURE_WIDTH })
             }
 
             showFigure()
@@ -2569,7 +2582,7 @@
                     [this.cursorVal()],
                     {
                         mode: "stem",
-                        width: 400,
+                        width: FIGURE_WIDTH,
                         xTickFilter: (tick) => Number.isInteger(tick)
                     }
                 );
@@ -2850,12 +2863,32 @@
             super()
             // Time domain: How long to simulate each impulse response for
             // Frequency domain: Steps between frequency points
-            this._impulseUi = new NumberSetting("UI of impulses [UI]", 1, 1000, 1, 64)
+            this._impulseUi = new NumberSetting("UI of impulses [UI]", 4, 512, 1, 64)
             // Time domain: Number of samples within each UI for impulse responses, step size of numerical convolution
             // Frequency domain: The maximum frequency (fs/2)
-            this._uiTimesteps = new NumberSetting("Timesteps per UI [1/UI]", 8, 1000, 1, 64)
+            this._uiTimesteps = new NumberSetting("Timesteps per UI [1/UI]", 4, 512, 1, 64)
 
-            this._runDuration = new NumberSetting("Timesteps per waveform update", 10, 10000, 10, 200)
+            // For FFT to work, both of above must be in powers of 2
+            // Round to power of 2 depending on whether clicked decrease or increase button
+            const roundPow2 = (val) => {
+                const log = Math.log2(val)
+
+                let int = Math.floor(log)
+                const frac = log % 1
+
+                if (frac != 0) {
+                    int = (frac >= 0.5) ? int : (int + 1)
+                }
+                return 2 ** int
+            }
+            this._impulseUi.onchange = () => {
+                this._impulseUi.backSet(roundPow2(this._impulseUi._value))
+            }
+            this._uiTimesteps.onchange = () => {
+                this._uiTimesteps.backSet(roundPow2(this._uiTimesteps._value))
+            }
+
+            this._runDuration = new NumberSetting("Timesteps per waveform update", 100, 10000, 100, 200)
 
             // Waveform views
             this.wfmHistLen = 20000
@@ -2913,8 +2946,8 @@
 
         showHelp() {
             setHelp([
-                "This controls the simulation. Continuous time blocks (DAC output, loss, CTLE, VGA) are modelled as LTI systems and simulated using their impulse responses. Time and frequency are normalized to units of Unit Intervals [UI] and [1/UI] respectively, where 1 UI is the time to transmit 1 bit.",
-                "\"UI of impulses\" controls how long an impulses is computed for. For accurate results, the start and end of impulse responses should be near 0.",
+                "This controls the simulation. Continuous time blocks (DAC output, loss, CTLE, VGA) are modelled as LTI systems and simulated using their impulse response. Time and frequency are normalized to units of Unit Intervals [UI] and [1/UI] respectively, where 1 UI is the time to transmit 1 bit.",
+                "\"UI of impulses\" controls how long an impulses is computed for. For accurate results, the magnitude at the start and end of impulse responses should be near zero.",
                 "\"Timesteps per UI\" controls the numerical integration accuracy for convolution. This also affects the maximum frequency in frequency response as it is the sampling rate for FFT.",
                 "\"Timesteps per waveform update\" controls how many timesteps are simulated when the waveforms are updated. Larger number of timesteps runs the simulation faster."
             ])
@@ -2942,7 +2975,7 @@
 
         showHelp() {
             setHelp([
-                "This generates a data pattern to be transmitted, a Pseudo-Random Binary Sequence. It is statistically similar to transmitting random data, but is not truly random. Higher order patterns are longer before repeating, which is useful in generating more bit patterns for eye diagrams. (When creating an eye diagram, we want to capture the effect of ISI. Thus we need to generate all bit patterns and see how ISI affects the eye)"
+                "This generates a data pattern to be transmitted, a Pseudo-Random Binary Sequence (PRBS). A PRBS is statistically similar to transmitting random data, but is deterministic and repeats. Higher order PRBS sequences have longer repetition periods, which is useful in generating bit patterns for eye diagrams. (When creating an eye diagram, we want to capture the effect of ISI. Thus we need to generate all bit patterns and see how ISI affects the eye)"
             ])
         }
 
@@ -2960,10 +2993,19 @@
             this._level0 = new NumberSetting("DAC code for bit 0", MIN_DIG_CODE, MAX_DIG_CODE, 1, -64)
             this._level1 = new NumberSetting("DAC code for bit 1", MIN_DIG_CODE, MAX_DIG_CODE, 1, 63)
 
+            this._pam4Levelm3 = new NumberSetting("DAC code for symbol -3", MIN_DIG_CODE, MAX_DIG_CODE, 1, -64)
+            this._pam4Levelm1 = new NumberSetting("DAC code for symbol -1", MIN_DIG_CODE, MAX_DIG_CODE, 1, -22)
+            this._pam4Level1 = new NumberSetting("DAC code for symbol 1", MIN_DIG_CODE, MAX_DIG_CODE, 1, 21)
+            this._pam4Level3 = new NumberSetting("DAC code for symbol 3", MIN_DIG_CODE, MAX_DIG_CODE, 1, 63)
+
+            this._modulation = new SelectSetting("Modulation", [
+                ["PAM2", this._level0, this._level1],
+                ["PAM4 (Not supported)", this._pam4Levelm3, this._pam4Levelm1, this._pam4Level1, this._pam4Level3]
+            ])
+
             this.name = "Encoder"
             this._settings = [
-                this._level0,
-                this._level1,
+                this._modulation
             ]
             this.figures = [
                 new CtPlot("Output"),
@@ -2975,13 +3017,27 @@
 
         showHelp() {
             setHelp([
-                "This converts bits to codes for the DAC. By default the DAC is 7 bit and can generate 128 different voltages using codes from -64 to 63."
+                "This converts bits to codes for the DAC. By default the DAC is 7 bit and can generate 128 different voltages using codes from -64 to 63.",
+                "Note PAM4 modulation is not fully supported, it is meant for viewing channel outputs only."
             ])
         }
 
         step(txClk, bit) {
             if (txClk == POSEDGE) {
-                this.outVal = (bit == 0) ? this._level0._value : this._level1._value
+                if (this._modulation._selectedIndex == 1) {
+                    // PAM4
+                    // This is not how you're supposed to modulate PAM4, but good enough for demo
+                    const lastVal = Math.random() > 0.5
+                    if (lastVal == 0) {
+                        this.outVal = (bit == 0) ? this._pam4Levelm3._value : this._pam4Levelm1._value
+                    }
+                    else {
+                        this.outVal = (bit == 0) ? this._pam4Level1._value : this._pam4Level3._value
+                    }
+                }
+                else {
+                    this.outVal = (bit == 0) ? this._level0._value : this._level1._value
+                }
             }
             return this.outVal
         }
@@ -3004,7 +3060,8 @@
 
         showHelp() {
             setHelp([
-                "This performs linear equalization with a FIR filter (Feed Forward Equalizer). Applying equalization at the transmitter helps the receiver recover data and clock signals on high loss channels. If equalization is applied on the pre/postcursors, the main cursor C0 must be reduced to avoid saturating the DAC codes."
+                "This performs linear equalization with a FIR filter (Feed Forward Equalizer). Applying equalization at the transmitter compensates channel losses, which can be observed by viewing the output FFT. If equalization is applied on the pre/postcursors, the main cursor C0 must be reduced to avoid saturating the DAC codes.",
+                "For more on FFE, see Digital Communications, John G. Proakis, Masoud Salehi. Chapter 9."
             ])
         }
     }
@@ -3043,7 +3100,7 @@
 
         showHelp() {
             setHelp([
-                "This converts DAC codes to output voltages. By default the DAC is 7 bit and can generate 128 different voltages between -1 and 1 V using codes from -64 to 63. The output response shapes the pulses generated by the DAC. The pulse choice affects bandwidth requirements and the behavior of clock recovery at the CDR."
+                "This converts DAC codes to output voltages. By default the DAC is 7 bit and can generate 128 different voltages between -1 and 1 V using codes from -64 to 63. The output response shapes the pulses generated by the DAC. The pulse shape affects bandwidth requirements and the behavior of clock recovery at the CDR."
             ])
         }
 
@@ -3145,7 +3202,7 @@
 
         showHelp() {
             setHelp([
-                "This models losses experienced by the the data travelling along the medium to the receiver. Nowadays, digital communications occurs at a rate exceeding the bandwidth of the channel. Different frequency components are subsequently attenuated, distorting the transmitted data and introducing ISI."
+                "This models losses experienced by the data traveling along the medium to the receiver. Modern digital communication occurs at rates exceeding the channel bandwidth. As a result, different frequency components are attenuated, distorting the transmitted data and introducing ISI."
             ])
         }
     }
@@ -3170,7 +3227,7 @@
 
         showHelp() {
             setHelp([
-                "This models noise picked up along the medium from external sources as Additive White Gaussian Noise. The RMS voltage, or equivalently the standard deviation, or square root of the noise power can be specified. This sets the signal to noise ratio in the receiver."
+                "This models noise introduced in the channel as Additive White Gaussian Noise. The RMS voltage, equivalently the standard deviation or square root of the noise power can be specified. This parameter the signal to noise ratio in the receiver."
             ])
         }
 
@@ -3205,7 +3262,7 @@
 
         showHelp() {
             setHelp([
-                "This checks for errors in the received data. Since the transmitter uses a known data pattern (a Pseudo-Random Binary Sequence), it can be recreated locally at the receiver and compared to the output bits. The waveforms shows the number of errors detected, or -1 if it could not synchronize the PRBS pattern locally to the incoming bits."
+                "This checks for errors in the received data. Since the transmitter uses a known data pattern (a Pseudo-Random Binary Sequence), the same sequence can be recreated locally at the receiver and compared against the received bits. The waveforms shows the number of errors detected, or -1 if it could not synchronize the local PRBS generator to the received bits."
             ])
         }
 
@@ -3295,7 +3352,7 @@
             ])
 
             this._dlevTrainEn = new EnableSetting("Train digital level", true)
-            this._dlevTrainIter = new NumberSetting("Digital level train iterations", 1, MAX_DIG_CODE, 1, 256)
+            this._dlevTrainIter = new NumberSetting("Digital level train duration", 1, MAX_DIG_CODE, 1, 256)
             this._dlev0 = new NumberSetting("Digital level 0", MIN_DIG_CODE, MAX_DIG_CODE, 1, -32)
             this._dlev1 = new NumberSetting("Digital level 1", MIN_DIG_CODE, MAX_DIG_CODE, 1, 31)
 
@@ -3333,8 +3390,9 @@
 
         showHelp() {
             setHelp([
-                "This makes a decision from the received data and outputs bits. The decision device can operate as a Decision Feedback Equalizer or Maximum Likelihood Sequence Detector (MLSD not yet supported). Maximum Likelihood Sequence Estimation is the optimal detector in the presence of ISI, but computationally expensive to implement. Hence, typical implementations use a suboptimal linear equalizer (FFE) with a smaller MLSE.",
-                "For more on MLSD/MLSE, see the Viterbi algorithm."
+                "This makes symbol decisions from the received data. The decision device can operate as a Decision Feedback Equalizer or Maximum Likelihood Sequence Detector (MLSD not yet supported). Maximum Likelihood Sequence Estimation provides optimal detection in the presence of ISI but is computationally expensive to implement. Hence, practical receivers use a suboptimal linear equalizer (FFE) followed by a reduced MLSD.",
+                "For more on DFE and MLSD/MLSE, see Digital Communications, John G. Proakis, Masoud Salehi. Chapter 9 and 10.",
+                "For more on MLSD/MLSE, see the Viterbi algorithm: https://ieeexplore.ieee.org/document/1450960"
             ])
         }
 
@@ -3356,8 +3414,8 @@
                     ++this.dlevAccumCount
                     if (this.dlevAccumCount >= this._dlevTrainIter._value) {
                         // Adjust current dlev based on error
-                        this._dlev0._value += Math.sign(this.dlev0Accum)
-                        this._dlev1._value += Math.sign(this.dlev1Accum)
+                        this._dlev0.backSet(this._dlev0._value + Math.sign(this.dlev0Accum))
+                        this._dlev1.backSet(this._dlev1._value + Math.sign(this.dlev1Accum))
 
                         this.dlevAccumCount = 0
                         this.dlev0Accum = 0
@@ -3389,7 +3447,7 @@
 
             this._ffeTrainEn = new EnableSetting("Train FFE coefficients", true)
             this._ffeC0TrainEn = new EnableSetting("Train FFE Cursor C0", false) // Allowing C0 to move causes DLEV to drop towards 0
-            this._ffeTrainIter = new NumberSetting("FFE coefficient train iterations", 1, MAX_DIG_CODE, 1, 16)
+            this._ffeTrainIter = new NumberSetting("FFE coefficient train duration", 1, MAX_DIG_CODE, 1, 16)
             this._ffeTrainStep = new NumberSetting("FFE coefficient train step", FFE_STEP, 16 * FFE_STEP, FFE_STEP, FFE_STEP)
             this._settings = [
                 this._ffeTrainEn,
@@ -3415,7 +3473,8 @@
 
         showHelp() {
             setHelp([
-                "This performs linear equalization with a FIR filter (Feed Forward Equalizer). A large equalizer is used at the receiver to remove ISI in the data. The training algorithm measures the error between the FFE output and the digital level set in MLSD/DFE, performing a least mean squares update to bring the error to 0."
+                "This performs linear equalization with a FIR filter (Feed Forward Equalizer) to compensate channel losses and remove ISI in the data. The training algorithm measures the error between the FFE output and the digital level set in MLSD/DFE, performing a least mean squares update to minimize the error.",
+                "For more on FFE, see Digital Communications, John G. Proakis, Masoud Salehi. Chapter 10."
             ])
         }
 
@@ -3484,7 +3543,7 @@
             ])
 
             this._cdrDlevTrainEn = new EnableSetting("Train CDR digital level", true)
-            this._cdrDlevTrainIter = new NumberSetting("CDR digital level train iterations", 1, MAX_DIG_CODE, 1, 64)
+            this._cdrDlevTrainIter = new NumberSetting("CDR digital level train duration", 1, MAX_DIG_CODE, 1, 64)
             this._cdrDlev0 = new NumberSetting("CDR digital level 0", MIN_DIG_CODE, MAX_DIG_CODE, 1, -40)
             this._cdrDlev1 = new NumberSetting("CDR digital level 1", MIN_DIG_CODE, MAX_DIG_CODE, 1, 40)
 
@@ -3543,10 +3602,9 @@
 
         showHelp() {
             setHelp([
-                "This recovers the clock signal and the data signal as a result (Clock Data Recovery). A local oscillator (not modelled) generates a clock signal at the data rate. The CDR uses phase detectors to align the phase of the sampling clock to the incoming data. The waveform shows the early (1) and late (-1) outputs of the phase detector. When the CDR is locked, the phase detector alternates between early and late.",
-                "Bang-bang phase detectors operate at the twice data rate. Using the last 3 samples (sampling at twice the data rate): a data transition occurred if s[0] != s[2]. Then, if s[0] == s[1] it is sampling early, if s[1] == s[2] it is sampling late. This positions the middle sample s[1] at the data transition. The actual data is taken from s[0] and s[2] which is positioned at the center of the pulse.",
-                "Mueller-Muller phase detectors operate at the data rate and attempts to find the center of the pulse response, see",
-                "https://www.mdpi.com/2079-9292/13/21/4218",
+                "This recovers the clock signal and consequently the data signal (Clock Data Recovery). A local oscillator (not modelled) generates a clock signal at the data rate. The CDR uses phase detectors to align the phase of the sampling clock to the incoming data. The waveform shows the early (1) and late (-1) output of the phase detector. When the CDR is locked, the phase detector output alternates between early and late.",
+                "Bang-bang phase detectors operate at twice the data rate. Using the last 3 samples (sampling at twice the data rate): a data transition is detected if s[0] != s[2]. Then, if s[0] == s[1] it is sampling early, if s[1] == s[2] it is sampling late. This positions the middle sample s[1] at the data transition. The actual data is taken from s[0] and s[2] which is positioned at the center of their symbols.",
+                "Mueller-Muller phase detectors operate at the data rate and attempt to position the sampling point at the center of the pulse response, see: https://www.mdpi.com/2079-9292/13/21/4218"
             ])
         }
 
@@ -3644,8 +3702,8 @@
                     ++this.cdrDlevAccumCount
                     if (this.cdrDlevAccumCount >= this._cdrDlevTrainIter._value) {
                         // Adjust current dlev based on error
-                        this._cdrDlev0._value += Math.sign(this.cdrDlev0Accum)
-                        this._cdrDlev1._value += Math.sign(this.cdrDlev1Accum)
+                        this._cdrDlev0.backSet(this._cdrDlev0._value + Math.sign(this.cdrDlev0Accum))
+                        this._cdrDlev1.backSet(this._cdrDlev1._value + Math.sign(this.cdrDlev1Accum))
 
                         this.cdrDlevAccumCount = 0
                         this.cdrDlev0Accum = 0
@@ -3677,7 +3735,8 @@
 
         showHelp() {
             setHelp([
-                "This performs linear equalization with a FIR filter (Feed Forward Equalizer). Applying equalization helps the CDR find the necessary transitions to recover the clock. The training algorithm measures the error between the CDR FFE output and the CDR digital level, performing a least mean squares update to bring the error to 0."
+                "This performs linear equalization with a FIR filter (Feed Forward Equalizer). Applying equalization helps the CDR find the transitions required to recover the clock. The training algorithm measures the error between the CDR FFE output and the CDR digital level, performing a least mean squares update to minimize the error.",
+                "For more on FFE, see Digital Communications, John G. Proakis, Masoud Salehi. Chapter 10."
             ])
         }
 
@@ -3743,7 +3802,7 @@
                 }
 
                 let adcRange = this._levelMax._value - this._levelMin._value
-                this.outVal = scale * adcRange + this._levelMin._value
+                this.outVal = Math.floor(scale * adcRange + this._levelMin._value)
             }
 
             return this.outVal
@@ -3758,11 +3817,17 @@
                 new Tf("Raised Cosine", (f, b) => raisedCosine(f, b), [new NumberSetting("Rolloff", 0, 1, 0.1, 0.1)])
             ])
             super(pulse)
+            this._vgaTrainEn = new EnableSetting("Train VGA gain", true)
+            this._vgaTrainIter = new NumberSetting("VGA gain train duration", 1, MAX_DIG_CODE, 1, 32)
+            this._vgaTrainPeak = new NumberSetting("VGA gain train ADC peak target", 1, MAX_DIG_CODE, 1, 60)
             this._gain = new NumberSetting("Voltage gain", 0, 16, 0.1, 0.7),
 
             this.name = "VGA"
             this._settings = [
                 pulse,
+                this._vgaTrainEn,
+                this._vgaTrainIter,
+                this._vgaTrainPeak,
                 this._gain
             ]
             this.figures = [
@@ -3772,17 +3837,57 @@
                 new DtPlot("Rx Clock Samples", "rx"),
                 new EyePlot("Eye Diagram", "rx")
             ]
+
+            this.vgaTrainCount = 0
+            this.adcPeak = 0
+        }
+
+        backSerialize() {
+            return this._gain._value
+        }
+
+        backDeserialize(stream) {
+            if (this._vgaTrainEn._value) {
+                this._gain.backSet(stream)
+            }
         }
 
         showHelp() {
             setHelp([
-                "This scales the input signal to full-scale of the ADC (Variable Gain Amplifier). The output response of the VGA can be adjusted with effects on the signal to noise ratio. SNR is maximized with a matched filter where the output response of the VGA matches the response of the DAC, this can be seen by observing noise in the FFT or the opening in the eye diagram."
+                "This scales the input signal to full-scale range of the ADC (Variable Gain Amplifier). The output response of the VGA can be adjusted, affecting the signal to noise ratio. SNR is maximized with a matched filter, where the VGA response matches the DAC response. This can be seen by observing noise in the FFT or the opening in the eye diagram. The training algorithm measures the peak output of the ADC and adjusts VGA gain if the peak is above or below target."
             ])
         }
 
-        step(voltage) {
+        step(rxClk, voltage) {
             const output = super.step(voltage)
-            return output * this._gain._value
+            const vgaOut = output * this._gain._value
+
+            // VGA gain training
+            if (rxClk == POSEDGE) {
+                // Measure the peak in the ADC
+                if (this._vgaTrainEn._value) {
+                    const adcOut = blocks[ADC].outVal
+                    if (Math.abs(adcOut) > this.adcPeak) {
+                        this.adcPeak = Math.abs(adcOut)
+                    }
+
+                    ++this.vgaTrainCount
+                    if (this.vgaTrainCount >= this._vgaTrainIter._value) {
+                        let newGain = this._gain._value + 0.01 * Math.sign(this._vgaTrainPeak._value - this.adcPeak)
+                        newGain = Math.round(newGain * 100) / 100 // Round to avoid floating point errors
+                        this._gain.backSet(newGain)
+
+                        this.vgaTrainCount = 0
+                        this.adcPeak = 0
+                    }
+                }
+                else {
+                    this.vgaTrainCount = 0
+                    this.adcPeak = 0
+                }
+            }
+
+            return vgaOut
         }
     }
 
@@ -3828,8 +3933,8 @@
 
         showHelp() {
             setHelp([
-                "This performs equalization by amplifying higher frequencies which typically experience more attenuation (Active Continuous Time Linear Equalizer). Equivalently, passive CTLEs attenuate lower frequencies to match higher frequencies. Different CTLE types are available, see",
-                "https://helpfiles.keysight.com/csg/d9300a/Help/Infiniium-UG/Content/Topics/Functions/Signal_Processing_Operators/ctle.htm"
+                "This performs equalization by amplifying higher frequency components which typically experience more attenuation in the channel (Active Continuous Time Linear Equalizer). Equivalently, passive CTLEs attenuate lower frequencies to match higher frequency components.",
+                "Different CTLE types are available, see: https://helpfiles.keysight.com/csg/d9300a/Help/Infiniium-UG/Content/Topics/Functions/Signal_Processing_Operators/ctle.htm"
             ])
         }
     }
@@ -3966,7 +4071,7 @@
                 const lossOut = stepBlock(LOSS, [dacOut])
                 const noiseOut = stepBlock(NOISE, [lossOut])
                 const ctleOut = stepBlock(CTLE, [noiseOut])
-                const vgaOut = stepBlock(VGA, [ctleOut])
+                const vgaOut = stepBlock(VGA, [rxClk, ctleOut])
                 const adcOut = stepBlock(ADC, [rxClk, vgaOut])
                 const rxffeOut = stepBlock(RXFFE, [rxClk, adcOut])
                 const cdrffeOut = stepBlock(CDRFFE, [rxClk, adcOut])
